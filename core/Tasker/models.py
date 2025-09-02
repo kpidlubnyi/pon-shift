@@ -64,8 +64,8 @@ class Stop(models.Model):
     stop_name = models.CharField(max_length=32)
     stop_code = models.CharField(max_length=8, null=True)
     platform_code = models.CharField(max_length=8, null=True)
-    stop_lat = models.DecimalField(max_digits=8, decimal_places=6)
-    stop_lon = models.DecimalField(max_digits=8, decimal_places=6)
+    stop_lat = models.FloatField()
+    stop_lon = models.FloatField()
     location_type = models.IntegerField(choices=LocationTypeChoice)
     parent_station = models.CharField(max_length=8, null=True)
     wheelchair_boarding = models.IntegerField(choices=WheelChairBoardingChoice)
@@ -73,6 +73,13 @@ class Stop(models.Model):
     town_name = models.CharField(max_length=32, null=True)
     street_name = models.CharField(max_length=32, null=True)
 
+    def __str__(self):
+        street_part = f'({self.street_name})' if self.street_name else ''
+        return f'{self.stop_name} {self.stop_code}{street_part}'
+    
+    def get_coordinates(self):
+        return (self.stop_lat, self.stop_lon)
+    
     class Meta:
         db_table = 'Tasker_Stops'
 
