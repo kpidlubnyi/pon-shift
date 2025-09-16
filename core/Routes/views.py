@@ -1,14 +1,25 @@
 from rest_framework.views import APIView
-from django.http import JsonResponse
+from rest_framework import status
+from django.http import JsonResponse, HttpResponse
 
 from Tasker.models import *
+from .serializers import *
 from .services.views import *
 
-class NearestStops(APIView):
-    def get(self, request):
-        address = request.GET.get('address')
-        limit = int(request.GET.get('limit', 3))
 
-        nearest_stops = get_n_nearest_stops(address, limit)
-        return JsonResponse(nearest_stops, status=404)
+class RouteInfo(APIView):
+    def get(self, request, route_id):
+        route = Route.objects.get(route_id=route_id)
+        response = RouteSerializer(route).data
+
+        return JsonResponse(response, status=status.HTTP_200_OK)
+
+class ShowRoute(APIView):
+    def get(self, request, trip_id):
+        shape_id = Trip.objects.get(trip_id=trip_id).shape.shape_id
+        shape_sequence = ShapeSequence.objects.filter(shape_id=shape_id)
+        route_sequence = [point.get_location() for point in shape_sequence]
+        map_html = show_route(route_sequence)
+
+        return HttpResponse(map_html)
     

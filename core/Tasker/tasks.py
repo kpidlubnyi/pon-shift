@@ -1,7 +1,7 @@
 from celery import shared_task
 import logging
 
-from .services.task import *
+from .services.tasks.gtfs import *
 
 
 logger = logging.getLogger(__name__)

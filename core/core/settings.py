@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-hqkj0wxp3ims=qr)o$vvd=$qpbhei%1wf^gpa0cuz_^xghjh-a'
 TRANSITLAND_API_KEY = getenv('TRANSITLAND_API_KEY')
 ZTM_ONESTOP_ID = getenv('ZTM_ONESTOP_ID')
+ORS_API_KEY = getenv('ORS_API_KEY')
 
 DEBUG = True
 
@@ -28,9 +29,13 @@ INSTALLED_APPS = [
     'django_celery_results',
     'rest_framework',
     'Tasker',
+    'Stops',
+    'Routes',
+    'Bikes',
 ]
 
 MIDDLEWARE = [
+    #'Stops.middleware.ProcessExceptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -94,7 +99,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Warsaw'
 
 USE_I18N = True
 
@@ -116,6 +121,11 @@ LOGGING = {
         },
     },
     'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'detailed',
+        },
         'file_all': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
@@ -146,12 +156,17 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-        'Tasker.tasks': {
+        'Tasker': {
             'handlers': ['file_celery'],
             'level': 'INFO',
-            'propagate': False,
+            'propagate': True,
         },
-        'Tasker.services.task': {
+        'Tasker.services': {
+            'handlers': ['file_celery'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'Tasker.services.tasks': {
             'handlers': ['file_celery'],
             'level': 'INFO',
             'propagate': False,

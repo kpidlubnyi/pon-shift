@@ -4,5 +4,6 @@ from .views import *
 
 
 urlpatterns = [
-    path('nearest-stops/', NearestStops.as_view())
+    path('<str:trip_id>/route', ShowRoute.as_view()),
+    path('<str:route_id>/', RouteInfo.as_view()),   
 ]

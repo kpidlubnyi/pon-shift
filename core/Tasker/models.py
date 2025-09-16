@@ -20,7 +20,9 @@ class Route(models.Model):
         MKURAN = 1
 
     class RouteTypeChoice(models.IntegerChoices):
-        METRO_AND_TRAM = 0
+        TRAM = 0
+        METRO = 1
+        TRAIN = 2
         BUS = 3
 
     route_id = models.CharField(max_length=8, primary_key=True)
@@ -51,10 +53,14 @@ class ShapeSequence(models.Model):
     class Meta:
         db_table = 'Tasker_ShapeSequences'
 
+    def get_location(self):
+        return (self.shape_pt_lat, self.shape_pt_lon)
+
 class Stop(models.Model):
     class LocationTypeChoice(models.IntegerChoices):
-        BUS = 0
-        METRO = 2
+        BUS_TRAM_TRAIN_AND_USEFUL_METRO = 0
+        METRO = 1
+        METRO_ENTRANCE = 2
     
     class WheelChairBoardingChoice(models.IntegerChoices):
         YES = 1
@@ -74,12 +80,13 @@ class Stop(models.Model):
     street_name = models.CharField(max_length=32, null=True)
 
     def __str__(self):
+        stop_name = Stop.objects.get(stop_id=self.parent_station).stop_name if self.parent_station else self.stop_name
         street_part = f'({self.street_name})' if self.street_name else ''
-        return f'{self.stop_name} {self.stop_code}{street_part}'
-    
+        return f'{stop_name} {self.stop_code}{street_part}'
+
     def get_coordinates(self):
         return (self.stop_lat, self.stop_lon)
-    
+
     class Meta:
         db_table = 'Tasker_Stops'
 
@@ -116,6 +123,7 @@ class StopTime(models.Model):
 
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
     stop_sequence = models.IntegerField()
+    stop = models.ForeignKey(Stop, on_delete=models.CASCADE)
     arrival_time = models.CharField(max_length=8)
     departure_time = models.CharField(max_length=8)
     pickup_type = models.IntegerField(choices=BoardingTypeChoice)

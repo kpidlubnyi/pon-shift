@@ -14,3 +14,7 @@ wheels/
 
 # Logs
 logs/
+
+# Test coverage files
+htmlcov/
+.coverage
