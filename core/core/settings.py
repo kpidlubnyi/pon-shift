@@ -9,9 +9,12 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-hqkj0wxp3ims=qr)o$vvd=$qpbhei%1wf^gpa0cuz_^xghjh-a'
+
 TRANSITLAND_API_KEY = getenv('TRANSITLAND_API_KEY')
-ZTM_ONESTOP_ID = getenv('ZTM_ONESTOP_ID')
 ORS_API_KEY = getenv('ORS_API_KEY')
+
+WKD_ONESTOP_ID = getenv('WKD_ONESTOP_ID')
+ZTM_ONESTOP_ID = getenv('ZTM_ONESTOP_ID')
 
 DEBUG = True
 
@@ -147,26 +150,26 @@ LOGGING = {
     },
     'loggers': {
         'celery.worker': {
-            'handlers': ['file_celery'],
+            'handlers': ['console', 'file_celery'],
             'level': 'INFO',
             'propagate': False,
         },
         'celery.beat': {
-            'handlers': ['file_celery'],
+            'handlers': ['console', 'file_celery'],
             'level': 'INFO',
             'propagate': False,
         },
         'Tasker': {
+            'handlers': ['console', 'file_celery'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'Tasker.services.tasks.gtfs': {
             'handlers': ['file_celery'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
-        'Tasker.services': {
-            'handlers': ['file_celery'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'Tasker.services.tasks': {
+        'Tasker.services.tasks.common': {
             'handlers': ['file_celery'],
             'level': 'INFO',
             'propagate': False,

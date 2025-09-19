@@ -1,7 +1,7 @@
-from django.core.management.base import BaseCommand, CommandError
-from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from django.core.management.base import BaseCommand
+from django_celery_beat.models import PeriodicTask
 
-from ...services.task import validate_carrier
+from ...services.tasks.gtfs import validate_carrier
 
 
 class Command(BaseCommand):

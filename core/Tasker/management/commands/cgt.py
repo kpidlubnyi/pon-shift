@@ -1,7 +1,10 @@
+import json
+
 from django.core.management.base import BaseCommand
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
-from ...services.task import *
+from ...services.tasks.gtfs import *
+
 
 class Command(BaseCommand):
     help = "Tworzy zadania periodyczne GTFS dla wszystkich agencji"
@@ -24,6 +27,7 @@ class Command(BaseCommand):
             crontab=schedule,
             name=task_name,
             task='Tasker.tasks.update_gtfs',
+            args=json.dumps([name])
         )
 
         if created:

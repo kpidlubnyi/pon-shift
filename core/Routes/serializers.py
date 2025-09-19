@@ -4,7 +4,7 @@ from rest_framework import serializers
 from django.db.models import Count
 from django.utils import timezone as tz
 
-from Tasker.models import *
+from Tasker.models.common import *
 from Stops.serializers import TripSerializer
 
 

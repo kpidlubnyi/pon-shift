@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.utils import timezone as tz
 
 from ..exceptions import *
-from Tasker.models import *
+from Tasker.models.common import *
 from ..serializers import *
 from Routes.services.views import *
 
