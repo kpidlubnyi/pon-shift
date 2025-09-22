@@ -29,7 +29,6 @@ def get_shortest_route(point1: LocationPoint, point2: LocationPoint, mode: str =
     url = f'{base_url}{mode}{api_key}{start_point}{end_point}'
 
     response = requests.get(url)
-    print(response.status_code)
     response = response.json()
     route_sequence = response \
         .get('features')[0] \
@@ -40,11 +39,27 @@ def get_shortest_route(point1: LocationPoint, point2: LocationPoint, mode: str =
 
     return route_sequence
 
+def calculate_zoom(point1, point2):
+    z = 0
+    d = get_route_distance([point1, point2])
+    if d >= 15:
+        z = 12
+    elif 15 > d >= 7.5:
+        z = 13
+    else:
+        z = 14
+
+    return z
+
 def show_route(shape_sequence: list[LocationPoint]) -> str:
-    fst_point, lst_point = shape_sequence[0], shape_sequence[-1]
-    two = Decimal(2.0)
-    middle = ((fst_point[0]+lst_point[0]) / two, (fst_point[1]+lst_point[1]) / two)
-    m = folium.Map(location=middle, zoom_start=14)
+    l = len(shape_sequence)
+    fst_point, mdl_point, lst_point = shape_sequence[0], shape_sequence[l // 2], shape_sequence[-1]
+    x1, x2, x3 = (p[0] for p in (fst_point, mdl_point, lst_point))
+    y1, y2, y3 = (p[1] for p in (fst_point, mdl_point, lst_point))
+    three = Decimal(3.0)
+    center = (sum([x1, x2, x3]) / three, sum([y1, y2, y3]) / three)
+    zoom = calculate_zoom(fst_point, lst_point)
+    m = folium.Map(location=center, zoom_start=zoom)
 
     folium.PolyLine(
         locations=shape_sequence,

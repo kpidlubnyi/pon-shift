@@ -102,15 +102,23 @@ d = defaultdict(lambda: 'PcS')
 d.update({5:'PtS', 6:'SbS', 7:'NdS'})
 
 
-def get_recent_trips(stoptime_objs: BaseManager[StopTime], n: int = 10, datetime = tz.localtime(tz.now())):
+def get_recent_trips(carrier:str, stoptime_objs: BaseManager[StopTime], n: int = 10, datetime = tz.localtime(tz.now())):
     day_of_week = datetime.isoweekday()
     date, time = datetime.date(), datetime.time()
 
-    trip_filter = (
-        Q(trip__trip_id__contains=date) & 
-        Q(trip__trip_id__contains=d[day_of_week])
-    )
-
+    match carrier:
+        case 'ztm':
+            trip_filter = (
+                Q(trip__trip_id__contains=date) & 
+                Q(trip__trip_id__contains=d[day_of_week])
+            )
+        case 'wkd':
+            carrier = Carrier.objects.get(carrier_code=carrier)
+            excluded_services = CalendarDate.objects \
+                .filter(carrier=carrier, date=date) \
+                .values_list('service_id', flat=True)
+            trip_filter = ~Q(trip__service_id__in=excluded_services)
+            
     stoptime_objs = stoptime_objs \
         .filter(trip_filter) \
         .filter(arrival_time__gt=time) \
@@ -125,21 +133,3 @@ def get_recent_trips(stoptime_objs: BaseManager[StopTime], n: int = 10, datetime
         recent_trips.append(stop_time)
 
     return recent_trips
-
-def filter_stops(stops: list[dict], by: str):
-    unique_stops = set()
-    stops_duplicates = set()
-
-    for i, stop in enumerate(stops):
-        st_id = stop[by] 
-        if st_id in unique_stops:
-            stops_duplicates.add(i)
-        else:
-            unique_stops.add(st_id)
-
-    stops = [stop for i, stop in enumerate(stops) if i not in stops_duplicates]
-    return stops
-
-
-if __name__ == '__main__':
-    print(get_location('Grzybowska 9'))

@@ -11,8 +11,8 @@ from .serializers import *
 
 class BasicStopView:
     def get_stops(self, **filters) -> list[dict]:
-        def get_extended_info(stop_id: str) -> tuple[list[str], str]:
-            stop_id = intercept_bad_stop_id(stop_id)
+        def get_extended_info(stop: dict) -> tuple[list[str], str]:
+            stop_id = intercept_bad_stop_id(stop['stop_id'])
 
             if stop_id == '7014M:P1':
                 stop_ids = [stop_id, stop_id[:-1]+'2']
@@ -25,14 +25,19 @@ class BasicStopView:
 
             try:
                 if first_route in {'M1', 'M2'}:
-                    return available_routes, 'metro'
+                    vehicle_type = 'metro'
                 elif int(first_route) < 100:
-                    return available_routes, 'tram'
+                    vehicle_type = 'tram'
                 else:
-                    return available_routes, 'bus'
+                    vehicle_type = 'bus'
             except:
-                if first_route[0] == 'S':
-                    return available_routes, 'train'
+                if first_route[0] in 'ASZ':
+                    vehicle_type = 'train'
+
+            stop['vehicle_type'] = vehicle_type
+            stop['available_routes'] = available_routes
+
+            return stop
         
         try:
             stops = Stop.objects.filter(**filters)
@@ -43,15 +48,16 @@ class BasicStopView:
             raise StopNotFoundError(**filters)
         
         by = 'stop_id' if any([field in filters.keys() for field in {'stop_code', 'stop_name'}]) else 'stop_name'
-        stops = filter_stops(stops, by)
+        stops = list(filter(lambda x: x[by], stops))
         
         if filters:
             for stop in stops:
-                available_routes, vehicle_type = get_extended_info(stop['stop_id'])
-                stop['available_routes'] = available_routes
-                stop['vehicle_type'] = vehicle_type
+                stop = get_extended_info(stop)
 
         return stops
+    
+    def get_carrier(self, model_obj):
+        return model_obj.carrier.carrier_code
     
 
 class AllStopsView(APIView, BasicStopView):
@@ -64,15 +70,21 @@ class AllStopsView(APIView, BasicStopView):
 class StopsView(APIView, BasicStopView):
     def get(self, request, stop_name):
         stops = self.get_stops(stop_name=stop_name)
+
+        if len(stops) == 1:
+            return StopView.get(self, request, stop_name)
+
         return JsonResponse({'stops':stops})
     
 
 
 class StopView(APIView, BasicStopView):
-    def get(self, request, stop_name, stop_code):
-        stop = self.get_stops(stop_name=stop_name, stop_code=stop_code)
-        stoptime_objs = StopTime.objects.filter(stop_id=stop[0]['stop_id'])
-        recent_trips = get_recent_trips(stoptime_objs)
+    def get(self, request, stop_name, stop_code=None):
+        stop = self.get_stops(stop_name=stop_name, stop_code=stop_code)[0]
+        stop_id = stop['stop_id']
+        stoptime_objs = StopTime.objects.filter(stop_id=stop_id)
+        carrier = self.get_carrier(stoptime_objs.first())
+        recent_trips = get_recent_trips(carrier, stoptime_objs)
 
         response = {
             'stop': stop,
