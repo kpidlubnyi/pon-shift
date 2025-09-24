@@ -8,7 +8,7 @@ class Command(BaseCommand):
     help = "Видаляє завдання оновлення GTFS для вибраного перевізника"
     
     def add_arguments(self, parser):
-        parser.add_argument('carrier', type=str, nargs=1, default='ztm')
+        parser.add_argument('carrier', type=str, nargs=1, default='ZTM')
 
     def handle(self, *args, **options):
         carrier = validate_carrier(options)

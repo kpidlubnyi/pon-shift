@@ -1,7 +1,6 @@
 import logging
 import gc
 
-from django.conf import settings
 from django.db import close_old_connections
 
 from ...models.staging import *
@@ -15,14 +14,8 @@ REQUIRED_MODELS = {
     'trips': TripStaging,
     'stop_times': StopTimeStaging,
     'frequencies': FrequenceStaging,
+    'transfers': TransferStaging,
 }
-
-ONESTOP_IDS = {
-    'ztm': settings.ZTM_ONESTOP_ID,
-    'wkd': settings.WKD_ONESTOP_ID,
-}
-
-ACCEPTED_CARRIERS = list(ONESTOP_IDS.keys())
 
 
 logger = logging.getLogger(__name__)
@@ -35,8 +28,15 @@ def delete_old_data(carrier: str):
 
 def convert_to_model_objects(carrier: str, model: models.Model, data_batch: list) -> list:
     """Конвертує батч даних в об'єкти моделі"""
+
+    def add_prefix(val):
+        nonlocal carrier
+        return f'{carrier}-{val}'
+    
     allowed_fields = [field.attname for field in model._meta.fields]
+    models_with_fk_to_trips = {rel.related_model for rel in TripStaging._meta.related_objects if rel.one_to_many}
     records = []
+
 
     if model == CarrierStaging:
         carrier_name = data_batch[0]['agency_name']
@@ -64,6 +64,15 @@ def convert_to_model_objects(carrier: str, model: models.Model, data_batch: list
                 if k in allowed_fields:
                     filtered_row[k] = None if v in {None, ''} else v
                 
+            if model == TripStaging:
+                filtered_row['trip_id'] = add_prefix(filtered_row['trip_id'])
+            elif model in models_with_fk_to_trips:
+                if model == TransferStaging:
+                    filtered_row['from_trip_id'] = add_prefix(filtered_row['from_trip_id'])
+                    filtered_row['to_trip_id'] = add_prefix(filtered_row['to_trip_id'])
+                else:
+                    filtered_row['trip_id'] = add_prefix(filtered_row['trip_id'])
+                    
             records.append(model(**filtered_row))
         except Exception as e:
             logger.warning(f"Помилка в рядку: {e}")

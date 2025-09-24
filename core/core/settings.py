@@ -13,8 +13,12 @@ SECRET_KEY = 'django-insecure-hqkj0wxp3ims=qr)o$vvd=$qpbhei%1wf^gpa0cuz_^xghjh-a
 TRANSITLAND_API_KEY = getenv('TRANSITLAND_API_KEY')
 ORS_API_KEY = getenv('ORS_API_KEY')
 
-WKD_ONESTOP_ID = getenv('WKD_ONESTOP_ID')
-ZTM_ONESTOP_ID = getenv('ZTM_ONESTOP_ID')
+ALLOWED_CARRIERS = ['WKD', 'ZTM', 'KM']
+
+ONESTOP_IDS = {
+    carrier: getenv(f'{carrier}_ONESTOP_ID')
+    for carrier in ALLOWED_CARRIERS
+}
 
 DEBUG = True
 
@@ -109,8 +113,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGS_DIR = BASE_DIR / 'logs'
 LOGGING = {

@@ -107,12 +107,12 @@ def get_recent_trips(carrier:str, stoptime_objs: BaseManager[StopTime], n: int =
     date, time = datetime.date(), datetime.time()
 
     match carrier:
-        case 'ztm':
+        case 'ZTM':
             trip_filter = (
                 Q(trip__trip_id__contains=date) & 
                 Q(trip__trip_id__contains=d[day_of_week])
             )
-        case 'wkd':
+        case 'WKD':
             carrier = Carrier.objects.get(carrier_code=carrier)
             excluded_services = CalendarDate.objects \
                 .filter(carrier=carrier, date=date) \

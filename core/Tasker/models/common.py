@@ -81,7 +81,7 @@ class Stop(models.Model):
     stop_lon = models.FloatField()
     location_type = models.IntegerField(choices=LocationTypeChoice, null=True)
     parent_station = models.CharField(max_length=8, null=True)
-    wheelchair_boarding = models.IntegerField(choices=WheelChairBoardingChoice)
+    wheelchair_boarding = models.IntegerField(choices=WheelChairBoardingChoice, null=True)
     stop_name_stem = models.CharField(max_length=32, null=True)
     town_name = models.CharField(max_length=32, null=True)
     street_name = models.CharField(max_length=32, null=True)
@@ -114,14 +114,14 @@ class Trip (models.Model):
     trip_short_name = models.CharField(max_length=32, null=True)
     trip_headsign = models.CharField(max_length=32)
     direction_id = models.IntegerField(choices=DirectionChoice)
-    wheelchair_accessible = models.IntegerField(choices=WheelchairAccessChoice)
+    wheelchair_accessible = models.IntegerField(choices=WheelchairAccessChoice, null=True)
     hidden_block_id = models.IntegerField(null=True, blank=True)
     brigade = models.CharField(max_length=4, null=True)
     fleet_type = models.CharField(max_length=16, null=True)
 
     class Meta:
         db_table = 'Tasker_Trips'
-        unique_together = [['trip_id', 'route_id']]
+        unique_together = [['trip_id', 'route']]
 
 
 class StopTime(models.Model):
@@ -152,3 +152,18 @@ class Frequence(models.Model):
 
     class Meta:
         db_table = 'Tasker_Frequencies'
+
+
+class Transfer(models.Model):
+    class TransferTypeChoice(models.IntegerChoices):
+        ONE = 1
+        
+    carrier = models.ForeignKey(Carrier, on_delete=models.CASCADE)
+    from_stop = models.ForeignKey(Stop, on_delete=models.CASCADE, related_name='transfers_from')
+    to_stop = models.ForeignKey(Stop, on_delete=models.CASCADE, related_name='transfers_to')
+    from_trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='transfers_from')
+    to_trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='transfers_to')
+    transfer_type = models.IntegerField(choices=TransferTypeChoice)
+
+    class Meta:
+        db_table = 'Tasker_Transfers'

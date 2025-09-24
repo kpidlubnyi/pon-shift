@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def validate_carrier(options):
     name = options['carrier'][0]
 
-    if name not in ACCEPTED_CARRIERS:
+    if name not in settings.ALLOWED_CARRIERS:
         raise CommandError(f'{name}: перевізник не облуговується або його не існує!')
     return name
 
@@ -33,7 +33,7 @@ def get_from_feed(feed, key):
     return feed.get('feeds')[0].get('feed_versions')[0].get(key)
 
 def get_recent_feed(carrier: str):  
-    onestop_id = ONESTOP_IDS[carrier]
+    onestop_id = settings.ONESTOP_IDS[carrier]
     api_key = settings.TRANSITLAND_API_KEY
     url = f'https://transit.land/api/v2/rest/feeds?onestop_id={onestop_id}&api_key={api_key}'
 
