@@ -3,6 +3,7 @@ import zipfile
 import logging
 import csv
 import io
+from typing import List, Generator
 
 from django.db import transaction, close_old_connections, reset_queries, connection
 from django.conf import settings
@@ -60,50 +61,143 @@ def get_gtfs(feed):
 def fetch_gtfs_zip(gtfs_zip) -> zipfile.ZipFile:
     return zipfile.ZipFile(io.BytesIO(gtfs_zip))
 
-def get_data_from_zip(zip_file: zipfile.ZipFile) -> dict[str, list]:
+def get_data_from_zip(zip_file: zipfile.ZipFile) -> Generator[tuple[str, dict], None, None]:
+    """Генератор, який повертає дані по одному рядку"""
     required_files = set(REQUIRED_MODELS.keys())
-    data = dict()
 
     try:
         for file_info in zip_file.infolist():
             filename, extension = file_info.filename.split('.')
 
             if filename in required_files and extension in {'csv', 'txt'}:
+                logger.info(f'Обробка файлу {filename}...')
                 with zip_file.open(file_info) as file:
                     decoded_file = io.TextIOWrapper(file, encoding='utf-8')
                     reader = csv.DictReader(decoded_file)
-                    data[filename] = list(reader)
+                    
+                    for row in reader:
+                        yield filename, row
+                        
+                logger.info(f'Файл {filename} оброблено')
+                        
     except Exception as e:
         logger.error(f'Не вдалося взяти дані з zip-файлу: {e}')
         return
+
+def process_file_in_batches(zip_file: zipfile.ZipFile, filename: str, batch_size: int = 10000) -> Generator[List[dict], None, None]:
+    """Генератор, який повертає дані файлу батчами"""
+    try:
+        file_info = None
+        for info in zip_file.infolist():
+            if info.filename.startswith(filename) and info.filename.endswith(('.csv', '.txt')):
+                file_info = info
+                break
+                
+        if not file_info:
+            logger.warning(f'Файл {filename} не знайдено в архіві')
+            return
+            
+        with zip_file.open(file_info) as file:
+            decoded_file = io.TextIOWrapper(file, encoding='utf-8')
+            reader = csv.DictReader(decoded_file)
+            batch = []
+
+            for row in reader:
+                batch.append(row)
+                if len(batch) >= batch_size:
+                    yield batch
+                    batch = []
+                    gc.collect()
+                    
+            if batch:
+                yield batch
+                
+    except Exception as e:
+        logger.error(f'Помилка під час обробки файлу {filename}: {e}')
+        return
     
-    return data
 
+def process_model_batch(carrier: str, model, batch_data: List[dict]) -> int:
+    if not batch_data:
+        return 0
+        
+    try:
+        records = convert_to_model_objects(carrier, model, batch_data)
+        if records:
+            model.objects.bulk_create(records, batch_size=200_000)
+        return len(records)
+    except Exception as e:
+        logger.error(f"Помилка під час обробки батчу для {model._meta.label}: {e}")
+        raise
 
-def import_to_staging(data, carrier: str):
+def import_to_staging(zip_file: zipfile.ZipFile, carrier: str, batch_size: int = 200_000):
     importing_order = list(REQUIRED_MODELS.keys())
     deleted = delete_old_data(carrier)
+    
     if not deleted:
         logger.warning(f'Даних перевізника {carrier} не було знайдено!' +
                        'Якщо це перший запуск для даного перевізника - зігноруй попередження,' + 
                        'в іншому разі - негайно провір базу даних!')
 
+    available_files = set()
+    for file_info in zip_file.infolist():
+        filename = file_info.filename.split('.')[0]
+        if filename in importing_order:
+            available_files.add(filename)
+
     for filename in importing_order:
-        if filename not in data:
+        if filename not in available_files:
             logger.warning(f'Файл {filename}.txt не було знайдено у GTFS перевізника {carrier}!')
             continue
+            
+        logger.info(f'Початок обробки файлу {filename}')
+        model = REQUIRED_MODELS[filename]
+        total_imported = 0
         
-        with transaction.atomic():
-            model = REQUIRED_MODELS[filename]
-            data_for_model = data[filename]
-            imported_count = process_model_data(carrier, model, data_for_model)
+        for batch in process_file_in_batches(zip_file, filename, batch_size):
+            try:
+                with transaction.atomic():
+                    imported_count = process_model_batch(carrier, model, batch)
+                    total_imported += imported_count
+                    
+                reset_queries()
+                close_old_connections()
+                gc.collect()
+                                
+            except Exception as e:
+                logger.error(f'Помилка під час імпорту батчу для {filename}: {e}')
+                raise
                 
-        reset_queries()
-        close_old_connections()
+        logger.info(f'Завершено обробку {filename}: {total_imported} записів')
+
+def download_and_process_gtfs(feed, carrier: str):
+    url = get_from_feed(feed, 'url')
+    
+    logger.info('Початок завантаження GTFS архіву...')
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+    
+    gtfs_buffer = io.BytesIO()
+    
+    total_size = 0
+    chunk_size = 8192
+    
+    for chunk in response.iter_content(chunk_size=chunk_size):
+        if chunk:
+            gtfs_buffer.write(chunk)
+            total_size += len(chunk)
+    
+    logger.info(f'Завантаження завершено. Розмір: {total_size // (1024 * 1024)} MB')
+    
+    gtfs_buffer.seek(0)
+    
+    try:
+        with zipfile.ZipFile(gtfs_buffer) as zip_file:
+            import_to_staging(zip_file, carrier, batch_size=200_000)
+    finally:
+        gtfs_buffer.close()
+        del gtfs_buffer
         gc.collect()
-
-
-    return
 
 def get_table_name(model: models.Model):
     return model._meta.db_table
@@ -142,7 +236,6 @@ def backup_from_regular_tables():
                 if hasattr(model, 'id'):
                     cursor.execute(f'SELECT MAX(id) FROM "{model_staging_name}"')
                     max_id = cursor.fetchone()[0]
-                    logger.info(f'Max id: {max_id}')
                     sequence_name_staging = f'"{model_staging_name}_id_seq"'
                     sequence_name = f'"{model_name}_id_seq"'
                     

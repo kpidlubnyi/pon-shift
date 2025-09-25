@@ -9,8 +9,8 @@ def create_periodic_task(schedule: CrontabSchedule, name: str, realtime: bool = 
     task_name = f'GTFS_UPDATING_{name}'
     task_name += '_RT' if realtime else ''
 
-    realtime_str = 'realtime' if realtime else ''
-    task = f'Tasker.tasks.update_{realtime_str}_gtfs'
+    task = 'Tasker.tasks.update_gtfs'
+    task += '_realtime' if realtime else ''
 
     task, created = PeriodicTask.objects.get_or_create(
         crontab=schedule,
