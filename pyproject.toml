@@ -14,8 +14,11 @@ dependencies = [
     "fakeredis>=2.31.1",
     "folium>=0.20.0",
     "geopy>=2.4.1",
+    "grpcio-tools>=1.75.0",
     "pandas>=2.3.2",
+    "protobuf>=6.32.1",
     "psycopg2>=2.9.10",
+    "pymongo>=4.15.1",
     "redis>=6.4.0",
     "requests>=2.32.5",
 ]

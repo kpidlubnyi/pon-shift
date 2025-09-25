@@ -12,6 +12,7 @@ SECRET_KEY = 'django-insecure-hqkj0wxp3ims=qr)o$vvd=$qpbhei%1wf^gpa0cuz_^xghjh-a
 
 TRANSITLAND_API_KEY = getenv('TRANSITLAND_API_KEY')
 ORS_API_KEY = getenv('ORS_API_KEY')
+GTFS_REALTIME_PROTO_URL = getenv('GTFS_REALTIME_PROTO_URL')
 
 ALLOWED_CARRIERS = ['WKD', 'ZTM', 'KM']
 
@@ -19,6 +20,11 @@ ONESTOP_IDS = {
     carrier: getenv(f'{carrier}_ONESTOP_ID')
     for carrier in ALLOWED_CARRIERS
 }
+ONESTOP_IDS.update({
+    'ZTM_RT_V': getenv('ZTM_RT_VEHICLES_ONESTOP_ID'),
+    'ZTM_RT_A': getenv('ZTM_RT_ALERTS_ONESTOP_ID'),
+    'WKD_RT_V': getenv('WKD_RT_ONESTOP_ID'),
+})
 
 DEBUG = True
 
@@ -81,6 +87,9 @@ DATABASES = {
         'PORT': getenv('DB_PORT', '5432'),
     }
 }
+
+MONGO_URI = getenv('MONGO_URI')
+MONGO_DB_NAME = getenv('MONGO_DB_NAME')
 
 REDIS_HOST = getenv('REDIS_HOST')
 REDIS_PORT = getenv('REDIS_PORT')

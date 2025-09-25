@@ -1,8 +1,9 @@
 from celery import shared_task
 import logging
 
-from .services.tasks.gtfs import *
+from .services.tasks import *
 from .services.redis import *
+from .services.mongo import *
 
 
 logger = logging.getLogger(__name__)
@@ -31,3 +32,17 @@ def update_gtfs(carrier: str):
     
     backup_from_regular_tables()
     logger.info('Бекап пройшов успішно!')
+
+@shared_task
+def update_realtime_gtfs(carrier: str):
+    if carrier == 'ZTM':
+        names = ['ZTM_RT_V', 'ZTM_RT_A']
+    elif carrier == 'WKD':
+        names = ['WKD_RT_V']
+
+    feeds = [(name, get_recent_feed(name)) for name in names]
+    gtfs_list = [(name, get_rt_gtfs(feed)) for name, feed in feeds]
+
+    for name, gtfs in gtfs_list:
+        entities = gtfs.get('entity')
+        replace_data(name, entities)

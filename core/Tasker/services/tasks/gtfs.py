@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def validate_carrier(options):
     name = options['carrier'][0]
 
-    if name not in settings.ALLOWED_CARRIERS:
+    if name not in settings.ALLOWED_CARRIERS and name != 'all':
         raise CommandError(f'{name}: перевізник не облуговується або його не існує!')
     return name
 
