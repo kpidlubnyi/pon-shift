@@ -44,3 +44,22 @@ def update_gtfs_realtime(carrier: str):
     for name, gtfs in gtfs_list:
         entities = gtfs.get('entity')
         replace_data(name, entities)
+
+@shared_task
+def update_veturilo_data():
+    logger.info('Початок роботи таски з оновлення даних Veturilo...')
+    try:
+        logger.info('Завантаження нових данних...')
+        data = fetch_veturilo_api()
+        logger.info('Видаленння старих даних...')
+        delete_old_veturilo_data()
+        logger.info('Обробка нових даних...')
+        logger.info(data[:5])
+        data = process_veturilo_data(data)
+
+        
+        logger.info('Імпорт нових даних...')
+        import_veturilo_data(data)
+        logger.info('Завершено успішно!')
+    except Exception as e:
+        logger.error(f'Помилка під час оновленна даних Veturilo: {e}')

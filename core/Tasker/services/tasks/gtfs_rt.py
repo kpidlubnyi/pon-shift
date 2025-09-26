@@ -6,7 +6,7 @@ from django.conf import settings
 
 
 def get_proto():
-    resp = requests.get(r'https://gtfs.org/documentation/realtime/gtfs-realtime.proto')
+    resp = requests.get(settings.GTFS_REALTIME_PROTO_URL)
     resp.raise_for_status()
 
     with open('gtfs-realtime.proto', 'wb') as f:

@@ -51,10 +51,8 @@ def find_bike_stations_nearby(location: tuple[float, float], radius: int = 200, 
         """
     )
     
-    if response.status_code == 200:
-        data = response.json()
-
-    data = data.get('elements')
+    response.raise_for_status()
+    data = response.json().get('elements')
     stations = []
     
     for station in data:

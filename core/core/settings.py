@@ -14,6 +14,8 @@ TRANSITLAND_API_KEY = getenv('TRANSITLAND_API_KEY')
 ORS_API_KEY = getenv('ORS_API_KEY')
 GTFS_REALTIME_PROTO_URL = getenv('GTFS_REALTIME_PROTO_URL')
 
+NEXTBIKE_API_URL = getenv('NEXTBIKE_API_URL')
+
 ALLOWED_CARRIERS = ['WKD', 'ZTM', 'KM']
 
 ONESTOP_IDS = {
@@ -180,7 +182,7 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-        'Tasker.services.tasks.common': {
+        'Tasker.services.tasks.bikes': {
             'handlers': ['file_celery'],
             'level': 'INFO',
             'propagate': False,
