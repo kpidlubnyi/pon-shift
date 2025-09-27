@@ -6,7 +6,7 @@ from ...services.tasks.commands import *
 
 
 class Command(BaseCommand):
-    help = "Tworzy zadania periodyczne GTFS dla wszystkich agencji"
+    help = "Створює періодичну таску для оновлення даних вказаного перевізника"
 
     @add_cron_arguments
     def add_arguments(self, parser):
@@ -20,7 +20,7 @@ class Command(BaseCommand):
         schedule, _ = CrontabSchedule.objects.get_or_create(**cron)
 
         is_realtime = options['r']
-        created = create_periodic_task(schedule, name, is_realtime)
+        created = create_gtfs_periodic_task(schedule, name, is_realtime)
         
         realtime_str = 'realtime ' if is_realtime else ''
         if created:

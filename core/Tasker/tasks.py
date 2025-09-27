@@ -50,16 +50,36 @@ def update_veturilo_data():
     logger.info('Початок роботи таски з оновлення даних Veturilo...')
     try:
         logger.info('Завантаження нових данних...')
-        data = fetch_veturilo_api()
-        logger.info('Видаленння старих даних...')
-        delete_old_veturilo_data()
+        data = fetch_veturilo_api()        
+        
         logger.info('Обробка нових даних...')
-        logger.info(data[:5])
         data = process_veturilo_data(data)
-
         
         logger.info('Імпорт нових даних...')
         import_veturilo_data(data)
         logger.info('Завершено успішно!')
     except Exception as e:
-        logger.error(f'Помилка під час оновленна даних Veturilo: {e}')
+        logger.error(f'Помилка під час оновлення даних Veturilo: {e}')
+    return
+ 
+@shared_task
+def update_scooter_data():
+    try:
+        logger.info('Початок роботи таски з оновлення даних самокатів...')
+        
+        logger.info('Завантаження даних з API...')
+        bolt_data = fetch_bolt_api()
+        dott_data = fetch_dott_api()
+        
+        logger.info('Обробка даних...')
+        bolt_data = standardize_scooter_data(bolt_data)
+        dott_data = standardize_scooter_data(dott_data)
+        data = bolt_data + dott_data
+
+        logger.info('Імпорт даних...')
+        import_scooter_data(data)
+        logger.info('Завершено успішно!')
+    except Exception as e:
+        logger.error(f'Помилка під час оновлення даних самокатів: {e}')
+    return
+

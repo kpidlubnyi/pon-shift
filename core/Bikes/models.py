@@ -31,3 +31,23 @@ class VeturiloStation(models.Model):
 
     class Meta:
         db_table = 'Bikes_Veturilo_Stations'
+
+class ScooterCompany(models.Model):
+    company_name = models.CharField(max_length=64)
+
+    class Meta:
+        db_table = 'Bikes_Scooter_Companies'
+
+
+class Scooter(models.Model):
+    id = models.CharField(max_length=32, primary_key=True)
+    company = models.ForeignKey(ScooterCompany, on_delete=models.CASCADE)
+    lat = models.DecimalField(max_digits=17, decimal_places=15)
+    lng = models.DecimalField(max_digits=17, decimal_places=15)
+    percentage = models.IntegerField()
+    distance_on_charge = models.IntegerField()
+    is_disabled = models.BooleanField(null=True)
+    last_reported = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'Bikes_Scooters'

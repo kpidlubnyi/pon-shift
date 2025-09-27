@@ -22,7 +22,7 @@ def add_cron_arguments(func):
         return result
     return wrapper
 
-def create_periodic_task(schedule: CrontabSchedule, name: str, realtime: bool = False):
+def create_gtfs_periodic_task(schedule: CrontabSchedule, name: str, realtime: bool = False):
     task_name = f'GTFS_UPDATING_{name}'
     task_name += '_RT' if realtime else ''
 
