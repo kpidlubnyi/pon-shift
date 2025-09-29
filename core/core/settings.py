@@ -11,8 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-hqkj0wxp3ims=qr)o$vvd=$qpbhei%1wf^gpa0cuz_^xghjh-a'
 
 TRANSITLAND_API_KEY = getenv('TRANSITLAND_API_KEY')
-ORS_API_KEY = getenv('ORS_API_KEY')
 GTFS_REALTIME_PROTO_URL = getenv('GTFS_REALTIME_PROTO_URL')
+ORS_PORT = getenv('ORS_PORT')
 
 NEXTBIKE_API_URL = getenv('NEXTBIKE_API_URL')
 
