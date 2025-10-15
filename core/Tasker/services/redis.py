@@ -22,7 +22,7 @@ except Exception as e:
 
 
 def redis_operation(func):
-    """Декоратор для операцій в Редісі"""
+    """Decorator for operations in Redis"""
     def wrapper(*args, **kwargs):
         if redis_client is None:
             return None

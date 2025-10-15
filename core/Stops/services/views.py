@@ -21,12 +21,12 @@ def get_location(address: str) -> tuple[float ,float]:
     location = nominatim.geocode(f"{address}, Warsaw, Poland", exactly_one=True)
 
     if not location:
-        raise AddressNotFoundError(f'Адресу {address} не знайдено!')
+        raise AddressNotFoundError(f'Address {address} was not found!')
     return (location.latitude, location.longitude)
 
 def get_n_nearest_points(selfpoint: tuple[float, float], dataset: list[Stop], n: int) -> list:
     if n > len(dataset):
-        raise ValueError('Не можна зробити вибірку більшу ніж увесь набір!')
+        raise ValueError('Cannot make a sample larger than the entire set!')
     
     distances = []
     
@@ -64,7 +64,7 @@ def get_nearest_stops(location: str | tuple[float, float], stops: list[Stop], li
     return nearest_stops
 
 def intercept_bad_stop_id(stop_id: str) -> str:
-    """Функція перехоплює індески станцій метро, котрі не з'являються в маршрутах, та повертає валідний."""
+    """The function intercepts the indices of metro stations that do not appear in the routes and returns a valid one."""
     def get_stop_by_id():
         nonlocal stop_id
         return Stop.objects.get(stop_id=stop_id)
@@ -85,7 +85,7 @@ def intercept_bad_stop_id(stop_id: str) -> str:
     return good_stop_id
 
 def get_available_routes(stoptime_objs: BaseManager[StopTime]) -> list[str]:
-    """Повертає список курсів, котрі зупиняються на цій зупинці, основуючись на відфільтрованному по потрібній зупинці датасеті зупинок транспорту."""
+    """Returns a list of routes that stop at this stop, based on the filtered dataset of transport stops for the required stop.."""
     trips_of_stop = stoptime_objs \
     .distinct('trip__trip_id') \
     .values_list('trip__trip_id', flat=True)

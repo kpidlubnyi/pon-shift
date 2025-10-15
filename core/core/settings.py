@@ -1,9 +1,5 @@
 from pathlib import Path
 from os import getenv
-from dotenv import load_dotenv
-
-
-load_dotenv()
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -128,7 +124,9 @@ USE_I18N = True
 
 USE_TZ = True
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'
+
 
 LOGS_DIR = BASE_DIR / 'logs'
 LOGGING = {

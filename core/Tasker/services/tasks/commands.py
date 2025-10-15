@@ -10,15 +10,15 @@ def add_cron_arguments(func):
         result = func(self, parser)
         
         parser.add_argument('--minute', '-m', type=str, default='*/5', 
-                            help='Хвилина (за замовчуванням: */5)')
+                            help='Minute (default: */5)')
         parser.add_argument('--hour', '-H', type=str, default='*',
-                            help='Година (за замовчуванням: *)')
+                            help='Hour (default: *)')
         parser.add_argument('--day_of_month', '-D', type=str, default='*',
-                            help='День місяця (за замовчуванням: *)')
+                            help='Day of the month (default: *)')
         parser.add_argument('--month_of_year', '-M', type=str, default='*',
-                            help='Місяць року (за замовчуванням: *)')
+                            help='Month of the year (default: *)')
         parser.add_argument('--day_of_week', '-W', type=str, default='*',
-                            help='День тижня (за замовчуванням: *)')
+                            help='Day of the week (default: *)')
         return result
     return wrapper
 

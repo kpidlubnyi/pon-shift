@@ -70,6 +70,6 @@ def show_route(shape_sequence: list[LocationPoint]) -> str:
 
     for i, point in enumerate(shape_sequence):
         if i in {0, len(shape_sequence)-1}:
-            folium.Marker(point, popup=f'Точка {i+1}').add_to(m)
+            folium.Marker(point, popup=f'Point {i+1}').add_to(m)
 
     return m._repr_html_()

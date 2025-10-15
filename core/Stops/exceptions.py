@@ -1,5 +1,5 @@
 class NotFoundError(Exception):
-    def __init__(self, obj, message='не знайдено'):
+    def __init__(self, obj, message='not found'):
         self.obj = obj
         self.message = message
 
@@ -8,14 +8,14 @@ class NotFoundError(Exception):
 
 
 class AddressNotFoundError(NotFoundError):
-    def __init__(self, address, message="адресу не знайдено"):
+    def __init__(self, address, message="address was not found"):
         self.message = message
         self.address = address
         super().__init__(self.address, self.message)
 
     
 class StopNotFoundError(NotFoundError):
-    def __init__(self, stop=None, message='зупинку не знайдено', **kwargs):
+    def __init__(self, stop=None, message='stop was not found', **kwargs):
         stop_name = kwargs['stop_name']
         stop_code = kwargs['stop_code']
         

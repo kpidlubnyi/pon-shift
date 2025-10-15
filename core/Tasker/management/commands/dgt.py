@@ -5,7 +5,7 @@ from ...services.tasks.gtfs import validate_carrier
 
 
 class Command(BaseCommand):
-    help = "Видаляє завдання оновлення GTFS для вибраного перевізника"
+    help = "Deletes GTFS update tasks for the selected carrier"
     
     def add_arguments(self, parser):
         parser.add_argument('carrier', type=str, nargs=1)
@@ -21,19 +21,19 @@ class Command(BaseCommand):
         try:
             periodic_task = PeriodicTask.objects.get(name=task_name)
         except PeriodicTask.DoesNotExist:
-            self.stdout.write(self.style.WARNING(f'{carrier}: {realtime_str}таск для цього перевізника не існує'))
+            self.stdout.write(self.style.WARNING(f'There is no task for {carrier}: {realtime_str}'))
             return
 
 
         crontab = periodic_task.crontab
         periodic_task.delete()
-        self.stdout.write(self.style.SUCCESS(f'Таск {realtime_str}для перевізника {carrier} успішно видалено!'))
+        self.stdout.write(self.style.SUCCESS(f'Task {realtime_str} for carrier {carrier} successfully deleted!'))
 
         if crontab.periodictask_set.exists():
             return
         
         crontab.delete()
-        self.stdout.write(self.style.SUCCESS(f'Розклад {crontab} усунено!'))
+        self.stdout.write(self.style.SUCCESS(f'Schedule {crontab} removed!'))
 
         
             

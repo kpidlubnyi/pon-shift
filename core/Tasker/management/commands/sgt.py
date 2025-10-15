@@ -3,7 +3,7 @@ from django_celery_beat.models import PeriodicTask
 from django.db.models import Q
 
 class Command(BaseCommand):
-    help = "Показує усі існуючі завдання на оновлення"
+    help = "Shows all existing update tasks"
 
     def handle(self, *args, **options):
         task_filter = (

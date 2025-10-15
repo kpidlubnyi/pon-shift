@@ -23,6 +23,6 @@ class Command(BaseCommand):
         )
         
         if created:
-            self.stdout.write(self.style.SUCCESS(f'Таск на оновлення даних самокатів створено!'))
+            self.stdout.write(self.style.SUCCESS(f'Task for updating scooter data created!'))
         else:
-            self.stdout.write(self.style.WARNING(f'Таск на оновлення даних самокатів уже існує!'))
+            self.stdout.write(self.style.WARNING(f'The task of updating scooter data already exists!'))

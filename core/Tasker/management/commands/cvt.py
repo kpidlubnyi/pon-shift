@@ -23,6 +23,6 @@ class Command(BaseCommand):
         )
         
         if created:
-            self.stdout.write(self.style.SUCCESS(f'Таск на оновлення даних Veturilo створено!'))
+            self.stdout.write(self.style.SUCCESS(f'Task for updating Veturilo data created!'))
         else:
-            self.stdout.write(self.style.WARNING(f'Таск на оновлення даних Veturilo уже існує!'))
+            self.stdout.write(self.style.WARNING(f'The task to update Veturilo data already exists.!'))

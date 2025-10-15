@@ -3,24 +3,24 @@ from ...models.staging import *
 
 
 class Command(BaseCommand):
-    help = "Повністю очищує усі таблиці пов'язані з даними розкладу та перевізників"
+    help = "Completely cleans all tables related to schedule data and carriers"
 
     def add_arguments(self, parser):
         parser.add_argument('-s', type=bool,
-                            help='Булевий аргумент, вказуючий чистити Staging таблиці чи звичайні')
+                            help='Boolean argument indicating whether to clean up staging tables or regular tables')
 
     def handle(self, *args, **options):
         model = CarrierStaging if options['s'] else Carrier
         staging_str = 'Staging ' if options['s'] else ''
 
-        self.stdout.write('Триває процес очищення бази даних...')
+        self.stdout.write('The database cleanup process is ongoing....')
         try:
             model.objects.all().delete()
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Неможливо очистити таблицю {model}:\n{e}'))
+            self.stdout.write(self.style.ERROR(f'Unable to clear table {model}:\n{e}'))
             return
         
-        self.stdout.write(self.style.SUCCESS(f'Таблиці {staging_str}успішно очищено!'))
+        self.stdout.write(self.style.SUCCESS(f'Tables {staging_str} successfully cleared!'))
 
     
         

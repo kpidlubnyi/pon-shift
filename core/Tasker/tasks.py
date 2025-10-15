@@ -10,25 +10,24 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 def update_gtfs(carrier: str):
-    """Оптимізована версія update_gtfs"""
-    logger.info(f'Запуск таски з оновлення GTFS перевізника {carrier}...')
+    logger.info(f'Running GTFS update task for carrier {carrier}...')
     
     feed = get_recent_feed(carrier)
     if not is_feed_new(feed, carrier):
-        logger.info('GTFS не оновився від часу останньої провірки.')
+        logger.info('GTFS has not been updated since the last check.')
         return
 
     try:
         download_and_process_gtfs(feed, carrier)
-        logger.info("Імпорт завершено! Перестановка таблиць...")
+        logger.info("Import complete! Table rearrangement...")
         swap_tables()
-        logger.info('Перестановка успішна!')
+        logger.info('The rearrangement is successful!')
         update_sha_in_redis(feed, carrier)
     except Exception as e:
-        logger.error(f'Помилка під час імпорту до тестових таблиць: {e}')
+        logger.error(f'Error during import to test tables: {e}')
 
     backup_from_regular_tables()
-    logger.info('Бекап пройшов успішно!')
+    logger.info('The backup was successful.!')
     gc.collect()
 
 @shared_task
@@ -47,39 +46,39 @@ def update_gtfs_realtime(carrier: str):
 
 @shared_task
 def update_veturilo_data():
-    logger.info('Початок роботи таски з оновлення даних Veturilo...')
+    logger.info('Start of work on updating Veturilo data...')
     try:
-        logger.info('Завантаження нових данних...')
+        logger.info('Loading new data...')
         data = fetch_veturilo_api()        
         
-        logger.info('Обробка нових даних...')
+        logger.info('Processing new data...')
         data = process_veturilo_data(data)
         
-        logger.info('Імпорт нових даних...')
+        logger.info('Importing new data...')
         import_veturilo_data(data)
-        logger.info('Завершено успішно!')
+        logger.info('Successfully completed!')
     except Exception as e:
-        logger.error(f'Помилка під час оновлення даних Veturilo: {e}')
+        logger.error(f'Error during Veturilo data update: {e}')
     return
  
 @shared_task
 def update_scooter_data():
     try:
-        logger.info('Початок роботи таски з оновлення даних самокатів...')
+        logger.info('Start of work on updating scooter data...')
         
-        logger.info('Завантаження даних з API...')
+        logger.info('Loading data from API...')
         bolt_data = fetch_bolt_api()
         dott_data = fetch_dott_api()
         
-        logger.info('Обробка даних...')
+        logger.info('Data processing...')
         bolt_data = standardize_scooter_data(bolt_data)
         dott_data = standardize_scooter_data(dott_data)
         data = bolt_data + dott_data
 
-        logger.info('Імпорт даних...')
+        logger.info('Data import...')
         import_scooter_data(data)
-        logger.info('Завершено успішно!')
+        logger.info('Successfully completed!')
     except Exception as e:
-        logger.error(f'Помилка під час оновлення даних самокатів: {e}')
+        logger.error(f'Error during scooter data update: {e}')
     return
 

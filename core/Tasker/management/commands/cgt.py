@@ -6,14 +6,14 @@ from ...services.tasks.commands import *
 
 
 class Command(BaseCommand):
-    help = "Створює періодичну таску для оновлення даних вказаного перевізника"
+    help = "Creates a periodic task to update the data of the specified carrier"
 
     @add_cron_arguments
     def add_arguments(self, parser):
         parser.add_argument('carrier', type=str, nargs=1,
-                            help='Перевізник, для котрого створиться завдання.')
+                            help='The carrier for whom the task will be created.')
         parser.add_argument('-r', action='store_true',
-                            help='Булевий аргумент, вказуючий чи створити realtime таску для даного перевізника')
+                            help='Boolean argument indicating whether to create a realtime task for this carrier')
 
     def handle(self, *args, **options):
         name, cron = validate_command_args(options)
@@ -24,6 +24,6 @@ class Command(BaseCommand):
         
         realtime_str = 'realtime ' if is_realtime else ''
         if created:
-            self.stdout.write(self.style.SUCCESS(f'Таск {realtime_str}для перевізника {name} створено!'))
+            self.stdout.write(self.style.SUCCESS(f'Task {realtime_str}for {name} carrier created!'))
         else:
-            self.stdout.write(self.style.WARNING(f'Таск {realtime_str}для перевізника {name} уже існує!'))
+            self.stdout.write(self.style.WARNING(f'Task {realtime_str}for {name} carrier already exists!'))

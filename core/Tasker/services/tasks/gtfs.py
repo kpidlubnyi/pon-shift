@@ -31,13 +31,13 @@ REQUIRED_MODELS = {
 
 
 def delete_old_gtfs_data(carrier: str):
-    """Видаляє старі дані даного перевізника з staging таблиць"""
+    """Deletes old data for this carrier from staging tables"""
     close_old_connections()
     return CarrierStaging.objects.filter(carrier_code=carrier).delete()[0]
 
 
 def convert_gtfs_data_to_model_objects(carrier: str, model: models.Model, data_batch: list) -> list:
-    """Конвертує батч даних в об'єкти моделі"""
+    """Converts a batch of data into model objects"""
 
     def add_prefix(val):
         nonlocal carrier
@@ -83,15 +83,15 @@ def convert_gtfs_data_to_model_objects(carrier: str, model: models.Model, data_b
                     
             records.append(model(**filtered_row))
         except Exception as e:
-            logger.warning(f"Помилка в рядку: {e}")
+            logger.warning(f"Error in line: {e}")
             raise
             
     return records
 
-def process_model_data(carrier: str, model: models.Model, model_data: list, batch_size: int = 100_000,):
-    """Обробляє дані моделі по батчах"""
+def process_model_data(carrier: str, model: models.Model, model_data: list, batch_size: int = 200_000,):
+    """Processes model data in batches"""
     total_rows = len(model_data)
-    logger.info(f"Початок імпорту {total_rows} записів для {model._meta.label}")
+    logger.info(f"Start importing {total_rows} records for {model._meta.label}")
     
     imported_count = 0
     
@@ -100,26 +100,26 @@ def process_model_data(carrier: str, model: models.Model, model_data: list, batc
         
         try:
             records = convert_gtfs_data_to_model_objects(carrier, model, batch)
-            model.objects.bulk_create(records, batch_size=15_000)
+            model.objects.bulk_create(records, batch_size=40_000)
             imported_count += len(records)
-            logger.info(f'Імпортовано логів: {imported_count}')
+            logger.info(f'Imported logs: {imported_count}')
             
             del records
             del batch
             gc.collect()
             
         except Exception as e:
-            logger.error(f"Помилка під час імпорту батчу {i}-{i+len(batch)} для {model._meta.label}: {e}")
+            logger.error(f"Error during import of batch {i}-{i+len(batch)} for {model._meta.label}: {e}")
             raise
     
-    logger.info(f"Завершено імпорт {imported_count} записів для {model._meta.label}")
+    logger.info(f"Imported {imported_count} records for {model._meta.label}")
     return imported_count
 
 def validate_carrier(options):
     name = options['carrier'][0]
 
     if name not in settings.ALLOWED_CARRIERS:
-        raise CommandError(f'{name}: перевізник не облуговується або його не існує!')
+        raise CommandError(f'{name}: the carrier is not serviced or does not exist!')
     return name
 
 def process_cron(options):
@@ -164,7 +164,7 @@ def fetch_gtfs_zip(gtfs_zip) -> zipfile.ZipFile:
     return zipfile.ZipFile(io.BytesIO(gtfs_zip))
 
 def get_data_from_zip(zip_file: zipfile.ZipFile) -> Generator[tuple[str, dict], None, None]:
-    """Генератор, який повертає дані по одному рядку"""
+    """Generator that returns data one row at a time"""
     required_files = set(REQUIRED_MODELS.keys())
 
     try:
@@ -172,7 +172,7 @@ def get_data_from_zip(zip_file: zipfile.ZipFile) -> Generator[tuple[str, dict], 
             filename, extension = file_info.filename.split('.')
 
             if filename in required_files and extension in {'csv', 'txt'}:
-                logger.info(f'Обробка файлу {filename}...')
+                logger.info(f'Processing file {filename}...')
                 with zip_file.open(file_info) as file:
                     decoded_file = io.TextIOWrapper(file, encoding='utf-8')
                     reader = csv.DictReader(decoded_file)
@@ -180,14 +180,14 @@ def get_data_from_zip(zip_file: zipfile.ZipFile) -> Generator[tuple[str, dict], 
                     for row in reader:
                         yield filename, row
                         
-                logger.info(f'Файл {filename} оброблено')
+                logger.info(f'File {filename} processed')
                         
     except Exception as e:
-        logger.error(f'Не вдалося взяти дані з zip-файлу: {e}')
+        logger.error(f'Unable to retrieve data from zip file: {e}')
         return
 
-def process_file_in_batches(zip_file: zipfile.ZipFile, filename: str, batch_size: int = 10000) -> Generator[List[dict], None, None]:
-    """Генератор, який повертає дані файлу батчами"""
+def process_file_in_batches(zip_file: zipfile.ZipFile, filename: str, batch_size: int = 100_000) -> Generator[List[dict], None, None]:
+    """Generator that returns file data in batches"""
     try:
         file_info = None
         for info in zip_file.infolist():
@@ -196,7 +196,7 @@ def process_file_in_batches(zip_file: zipfile.ZipFile, filename: str, batch_size
                 break
                 
         if not file_info:
-            logger.warning(f'Файл {filename} не знайдено в архіві')
+            logger.warning(f'File {filename} not found in archive')
             return
             
         with zip_file.open(file_info) as file:
@@ -215,7 +215,7 @@ def process_file_in_batches(zip_file: zipfile.ZipFile, filename: str, batch_size
                 yield batch
                 
     except Exception as e:
-        logger.error(f'Помилка під час обробки файлу {filename}: {e}')
+        logger.error(f'Error while processing file {filename}: {e}')
         return
     
 
@@ -229,7 +229,7 @@ def process_model_batch(carrier: str, model, batch_data: List[dict]) -> int:
             model.objects.bulk_create(records, batch_size=200_000)
         return len(records)
     except Exception as e:
-        logger.error(f"Помилка під час обробки батчу для {model._meta.label}: {e}")
+        logger.error(f"Error during batch processing for {model._meta.label}: {e}")
         raise
 
 def import_to_staging(zip_file: zipfile.ZipFile, carrier: str, batch_size: int = 200_000):
@@ -237,9 +237,9 @@ def import_to_staging(zip_file: zipfile.ZipFile, carrier: str, batch_size: int =
     deleted = delete_old_gtfs_data(carrier)
     
     if not deleted:
-        logger.warning(f'Даних перевізника {carrier} не було знайдено!' +
-                       'Якщо це перший запуск для даного перевізника - зігноруй попередження,' + 
-                       'в іншому разі - негайно провір базу даних!')
+        logger.warning(f'No data found for carrier {carrier}!' +
+                       'If this is the first launch for this carrier, ignore the warning,' + 
+                       'otherwise, check the database immediately!')
 
     available_files = set()
     for file_info in zip_file.infolist():
@@ -249,10 +249,10 @@ def import_to_staging(zip_file: zipfile.ZipFile, carrier: str, batch_size: int =
 
     for filename in importing_order:
         if filename not in available_files:
-            logger.warning(f'Файл {filename}.txt не було знайдено у GTFS перевізника {carrier}!')
+            logger.warning(f'The file {filename}.txt was not found in GTFS carrier {carrier}!')
             continue
             
-        logger.info(f'Початок обробки файлу {filename}')
+        logger.info(f'Start processing the file {filename}')
         model = REQUIRED_MODELS[filename]
         total_imported = 0
         
@@ -267,29 +267,29 @@ def import_to_staging(zip_file: zipfile.ZipFile, carrier: str, batch_size: int =
                 gc.collect()
                                 
             except Exception as e:
-                logger.error(f'Помилка під час імпорту батчу для {filename}: {e}')
+                logger.error(f'Error during batch import for {filename}: {e}')
                 raise
                 
-        logger.info(f'Завершено обробку {filename}: {total_imported} записів')
+        logger.info(f'Processing of {filename} completed: {total_imported} records')
 
 def download_and_process_gtfs(feed, carrier: str):
     url = get_from_feed(feed, 'url')
     
-    logger.info('Початок завантаження GTFS архіву...')
+    logger.info('Start downloading GTFS archive...')
     response = requests.get(url, stream=True)
     response.raise_for_status()
     
     gtfs_buffer = io.BytesIO()
     
     total_size = 0
-    chunk_size = 8192
+    chunk_size = 128_000
     
     for chunk in response.iter_content(chunk_size=chunk_size):
         if chunk:
             gtfs_buffer.write(chunk)
             total_size += len(chunk)
     
-    logger.info(f'Завантаження завершено. Розмір: {total_size // (1024 * 1024)} MB')
+    logger.info(f'Download complete. Size: {total_size // (1024 * 1024)} MB')
     
     gtfs_buffer.seek(0)
     
