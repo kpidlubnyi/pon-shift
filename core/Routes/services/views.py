@@ -22,13 +22,15 @@ def get_route_distance(points: list[LocationPoint]) -> float:
     return distance
 
 def get_shortest_route(point1: LocationPoint, point2: LocationPoint, mode: str = 'foot-walking'):
-    port = settings.ORS_PORT
-    base_url = f'http://localhost:{port}/ors/v2/directions'
-    start_point = f'start={point1[1]},{point1[0]}'
-    end_point = f'end={point2[1]},{point2[0]}'
-    url = f'{base_url}/{mode}?{start_point}&{end_point}'
+    host, port = settings.ORS_HOST, settings.ORS_PORT
+    base_url = f'http://{host}:{port}/ors/v2/directions'
+    url = f'{base_url}/{mode}'
+    params = {
+        'start':f'{point1[1]},{point1[0]}',
+        'end': f'{point2[1]},{point2[0]}'
+    }
 
-    response = requests.get(url)
+    response = requests.get(url, params=params)
     response = response.json()
     route_sequence = response \
         .get('features')[0] \

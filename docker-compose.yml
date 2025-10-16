@@ -19,6 +19,8 @@ services:
         condition: service_healthy
       mongo-db:
         condition: service_healthy
+      ors:
+        condition: service_healthy
     env_file:
       - .env
     healthcheck:
@@ -140,6 +142,32 @@ services:
       - .env
     networks:
       - core-network
+    restart: unless-stopped
+  ors:
+    build:
+      context: ./ors
+    container_name: ors
+    ports:
+      - "8081:8082"
+    volumes:
+      - ./ors/graphs:/home/ors/graphs
+      - ./ors/logs:/home/ors/logs
+      - ./ors/elevation_cache:/home/ors/elevation_cache
+      - ./ors/files:/home/ors/files
+      - ./ors/conf:/home/ors/config
+    environment:
+      REBUILD_GRAPHS: "True"
+      CONTAINER_LOG_LEVEL: "INFO"
+      XMS: 3g
+      XMX: 4g
+    networks:
+      - core-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/ors/v2/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5m
     restart: unless-stopped
 
 volumes:

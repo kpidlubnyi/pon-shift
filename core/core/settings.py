@@ -8,6 +8,7 @@ SECRET_KEY = 'django-insecure-hqkj0wxp3ims=qr)o$vvd=$qpbhei%1wf^gpa0cuz_^xghjh-a
 
 TRANSITLAND_API_KEY = getenv('TRANSITLAND_API_KEY')
 GTFS_REALTIME_PROTO_URL = getenv('GTFS_REALTIME_PROTO_URL')
+ORS_HOST = getenv('ORS_HOST')
 ORS_PORT = getenv('ORS_PORT')
 
 NEXTBIKE_API_URL = getenv('NEXTBIKE_API_URL')
