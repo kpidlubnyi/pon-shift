@@ -65,6 +65,8 @@ services:
       - .env
     volumes:
       - mongo_data:/data/db
+      - ./mongod.conf:/etc/mongod.conf
+    command: ['mongod', '--config', "/etc/mongod.conf"]
     networks:
       - core-network
     restart: unless-stopped
@@ -203,10 +205,9 @@ services:
       context: ./otp
     container_name: otp
     environment:
-      - JAVA_OPTS=-Xmx5G -Xms1G
+      - JAVA_OPTS=-Xmx5G -Xms3G
     networks:
       - core-network
-    command: "--load --serve"
     ports:
       - "8081:8080"
     restart: unless-stopped
