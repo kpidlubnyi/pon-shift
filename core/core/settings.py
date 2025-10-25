@@ -30,6 +30,8 @@ ONESTOP_IDS.update({
     'WKD_RT_V': getenv('WKD_RT_ONESTOP_ID'),
 })
 
+SERVED_FEEDS = list(ONESTOP_IDS.keys())
+
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']

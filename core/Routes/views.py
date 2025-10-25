@@ -21,5 +21,5 @@ class ShowRoute(APIView):
         route_sequence = [point.get_location() for point in shape_sequence]
         map_html = show_route(route_sequence)
 
-        return HttpResponse(map_html)
+        return HttpResponse(map_html, status=200)
     

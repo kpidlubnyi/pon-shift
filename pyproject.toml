@@ -16,6 +16,7 @@ dependencies = [
     "geopy>=2.4.1",
     "grpcio-tools>=1.75.0",
     "gunicorn>=23.0.0",
+    "kombu>=5.5.4",
     "pandas>=2.3.2",
     "protobuf>=6.32.1",
     "psycopg2-binary>=2.9.10",

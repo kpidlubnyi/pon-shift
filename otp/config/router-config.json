@@ -1,0 +1,22 @@
+{
+  "updaters": [
+    {
+      "type": "stop-time-updater",
+      "url": "https://mkuran.pl/gtfs/wkd.pb",
+      "feedId": "WKD",
+      "frequency": "15s"
+    },
+    {
+      "type": "real-time-alerts",
+      "url": "https://mkuran.pl/gtfs/warsaw/alerts.pb",
+      "feedId": "ZTM",
+      "frequency": "15s"
+    },
+    {
+      "type": "vehicle-positions",
+      "url": "https://mkuran.pl/gtfs/warsaw/vehicles.pb",
+      "feedId": "ZTM",
+      "frequency": "15s"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "osm": [
+    {
+      "source": "https://download.geofabrik.de/europe/poland/mazowieckie-latest.osm.pbf"
+    }
+  ],
+  "transitFeeds": [
+    {
+      "type": "gtfs",
+      "feedId": "KM",
+      "source": "https://mkuran.pl/gtfs/kolejemazowieckie.zip"
+    },
+    {
+      "type": "gtfs",
+      "feedId": "WKD",
+      "source": "https://mkuran.pl/gtfs/wkd.zip"
+    },
+    {
+      "type": "gtfs",
+      "feedId": "ZTM",
+      "source": "https://mkuran.pl/gtfs/warsaw.zip"
+    }
+  ]
+}

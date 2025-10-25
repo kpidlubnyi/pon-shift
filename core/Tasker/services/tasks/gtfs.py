@@ -4,11 +4,13 @@ import logging
 import csv
 import io
 import gc
+import os
 from typing import List, Generator
 
 from django.db import transaction, close_old_connections, reset_queries, connection
 from django.conf import settings
 from django.core.management import CommandError
+from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
 from ...models.staging import *
 from ..redis import *
@@ -29,12 +31,44 @@ REQUIRED_MODELS = {
     'transfers': TransferStaging,
 }
 
+OTP_FLAG_FILE = "/var/opentripplanner/there_is_new_gtfs"
+
+
+def check_task_availability(carrier: str) -> bool:
+    task_name = f'GTFS_UPDATING_{carrier}'
+    
+    try:
+        task = PeriodicTask.objects.get(name=task_name)
+    except Exception:
+        return False
+    
+    return True
+
+def notify_otp_builder():
+    """
+    Creates a flag file for OTP so that the otp-watchdog gives the command to build a graph with new data.
+    If the file already exists, do nothing.
+    """
+    try:
+        if (is_it_first_time := lambda: CarrierStaging.objects.all().count() == 0):
+            logger.info("It's first time, no needs to recreate OTP graph.")
+            return
+        if not os.path.exists(OTP_FLAG_FILE):
+            with open(OTP_FLAG_FILE, "w") as f:
+                f.write(".")
+            logger.info(f"GTFS flag created at {OTP_FLAG_FILE}")
+        else:
+            logger.warning(f"GTFS flag already exists at {OTP_FLAG_FILE}")
+    except Exception as e:
+        logger.error(f"Failed to create GTFS flag: {e}")
 
 def delete_old_gtfs_data(carrier: str):
     """Deletes old data for this carrier from staging tables"""
     close_old_connections()
     return CarrierStaging.objects.filter(carrier_code=carrier).delete()[0]
 
+def get_allowed_fields(model: models.Model) -> list:
+    return [field.attname for field in model._meta.fields]
 
 def convert_gtfs_data_to_model_objects(carrier: str, model: models.Model, data_batch: list) -> list:
     """Converts a batch of data into model objects"""
@@ -43,7 +77,7 @@ def convert_gtfs_data_to_model_objects(carrier: str, model: models.Model, data_b
         nonlocal carrier
         return f'{carrier}-{val}'
     
-    allowed_fields = [field.attname for field in model._meta.fields]
+    allowed_fields = get_allowed_fields(model)
     trip_related_models = TripStaging._meta.related_objects
     models_with_trip_field = {TripStaging} | {rel.related_model for rel in trip_related_models if rel.one_to_many}
     records = []
@@ -122,14 +156,19 @@ def validate_carrier(options):
         raise CommandError(f'{name}: the carrier is not serviced or does not exist!')
     return name
 
-def process_cron(options):
-    cron_names = ['minute', 'hour', 'day_of_month', 'month_of_year', 'day_of_week']
-    cron_args = {name: options[name] for name in cron_names}
-    return cron_args
-
+def validate_cron(options):
+    try:
+        cron_names = ['minute', 'hour', 'day_of_month', 'month_of_year', 'day_of_week']
+        cron_args = {name: options[name] for name in cron_names}
+        cron, _ = CrontabSchedule.objects.get_or_create(**cron_args)
+        return cron
+    except Exception as e:
+        logger.error(f'Error during validation of crontab arguments: {e}')
+        return None
+    
 def validate_command_args(options: dict) -> tuple[str, dict]:
     carrier = validate_carrier(options)
-    cron_args = process_cron(options)    
+    cron_args = validate_cron(options)    
     return carrier, cron_args
 
 def get_from_feed(feed, key):
@@ -143,8 +182,7 @@ def get_recent_feed(carrier: str):
     feed = requests.get(url)
     feed.raise_for_status()
 
-    feed = feed.json()
-    return feed
+    return feed.json()
 
 def is_feed_new(feed, carrier:str):
     redis_sha = get_redis_sha(carrier)
@@ -218,15 +256,63 @@ def process_file_in_batches(zip_file: zipfile.ZipFile, filename: str, batch_size
         logger.error(f'Error while processing file {filename}: {e}')
         return
     
+def bulk_copy_to_db(model, records: list):
+    """Uses PostgreSQL COPY for fast import"""
+    if not records:
+        return 0
 
-def process_model_batch(carrier: str, model, batch_data: List[dict]) -> int:
+    model_fields = {f.attname: f for f in model._meta.fields if f.attname != 'id'}
+    fields = list(model_fields.keys())
+
+    buffer = io.StringIO()
+    for record in records:
+        row = []
+        for field_name in fields:
+            value = getattr(record, field_name, None)
+            
+            if value is None:
+                row.append('\\N')
+            elif isinstance(value, bool):
+                row.append('t' if value else 'f')
+            else:
+                str_value = str(value)
+                str_value = str_value.replace('\\', '\\\\')
+                str_value = str_value.replace('\n', '\\n')
+                str_value = str_value.replace('\r', '\\r')
+                str_value = str_value.replace('\t', '\\t')
+                row.append(str_value)
+                
+        buffer.write('\t'.join(row) + '\n')
+
+    buffer.seek(0)
+
+    table_name = model._meta.db_table
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.copy_from(
+                buffer, 
+                table_name, 
+                columns=fields,
+                null='\\N'
+            )
+        logger.info(f"Successfully copied {len(records)} records to {table_name}")
+        return len(records)
+    except Exception as e:
+        logger.error(f"Error during COPY for {model._meta.label}: {e}")
+        logger.error(f"Table: {table_name}")
+        logger.error(f"Fields: {fields}")
+        logger.error(f"First record sample: {getattr(records[0], fields[0], 'N/A') if records else 'No records'}")
+        raise
+
+def process_model_batch(carrier: str, model: models.Model, batch_data: List[dict]) -> int:
     if not batch_data:
         return 0
         
     try:
         records = convert_gtfs_data_to_model_objects(carrier, model, batch_data)
         if records:
-            model.objects.bulk_create(records, batch_size=200_000)
+            bulk_copy_to_db(model, records)
         return len(records)
     except Exception as e:
         logger.error(f"Error during batch processing for {model._meta.label}: {e}")
@@ -328,18 +414,19 @@ def backup_from_regular_tables():
         with connection.cursor() as cursor:
             for model_staging in models_staging:
                 model = model_staging._base_model
+                model_name = get_table_name(model)
+                model_staging_name = get_table_name(model_staging)
 
                 if model.objects.count() > 0:
-                    model_name = get_table_name(model)
-                    model_staging_name = get_table_name(model_staging)
-
                     cursor.execute(f'INSERT INTO "{model_staging_name}" SELECT * FROM "{model_name}";')
                 
-                if hasattr(model, 'id'):
-                    cursor.execute(f'SELECT MAX(id) FROM "{model_staging_name}"')
-                    max_id = cursor.fetchone()[0]
-                    sequence_name_staging = f'"{model_staging_name}_id_seq"'
-                    sequence_name = f'"{model_name}_id_seq"'
-                    
-                    cursor.execute(f"SELECT setval('{sequence_name}', {max_id+1});")
-                    cursor.execute(f"SELECT setval('{sequence_name_staging}', {max_id+1});")
+                    if hasattr(model, 'id'):
+                        cursor.execute(f'SELECT MAX(id) FROM "{model_staging_name}"')
+                        max_id = cursor.fetchone()[0]
+                        
+                        if max_id is not None:
+                            sequence_name_staging = f'"{model_staging_name}_id_seq"'
+                            sequence_name = f'"{model_name}_id_seq"'
+                            
+                            cursor.execute(f"SELECT setval('{sequence_name}', {max_id+1});")
+                            cursor.execute(f"SELECT setval('{sequence_name_staging}', {max_id+1});")

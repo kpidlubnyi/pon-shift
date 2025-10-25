@@ -8,6 +8,7 @@ services:
       - ./core:/app
       - static_volume:/app/static
       - logs_volume:/app/logs
+      - ./otp:/otp
     ports:
       - "8001:8000"
     networks:
@@ -24,11 +25,11 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')\""]
-      interval: 1m30s
-      timeout: 1m30s
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health/ || exit 1"]
+      interval: 30s
+      timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 8m
     restart: unless-stopped
 
   postgres-db:
@@ -62,8 +63,6 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_DB_NAME}
     env_file:
       - .env
-    ports:
-      - "27018:27017"
     volumes:
       - mongo_data:/data/db
     networks:
@@ -78,8 +77,6 @@ services:
   redis:
     image: redis:7.2-alpine
     container_name: redis
-    ports:
-      - "6380:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -92,12 +89,42 @@ services:
       timeout: 3s
       retries: 5
 
-  celery-worker:
+  celery-worker-default:
     build:
       context: .
       dockerfile: ./core/Dockerfile
-    container_name: celery-worker
-    command: celery -A core worker --loglevel=info --concurrency=4
+    container_name: celery-worker-default
+    command: celery -A core worker -Q default --loglevel=info --concurrency=4 -n default@%h
+    volumes:
+      - ./core:/app
+      - logs_volume:/app/logs
+    depends_on:
+      core:
+        condition: service_healthy
+      postgres-db:
+        condition: service_healthy
+      mongo-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - core-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A core inspect ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  celery-worker-gtfs:
+    build:
+      context: .
+      dockerfile: ./core/Dockerfile
+    container_name: celery-worker-gtfs
+    command: celery -A core worker -Q gtfs_updates --loglevel=info --concurrency=1 -n gtfs@%h
     volumes:
       - ./core:/app
       - logs_volume:/app/logs
@@ -132,7 +159,9 @@ services:
       - ./core:/app
       - logs_volume:/app/logs
     depends_on:
-      celery-worker:
+      celery-worker-default:
+        condition: service_healthy
+      celery-worker-gtfs:
         condition: service_healthy
       postgres-db:
         condition: service_healthy
@@ -143,12 +172,11 @@ services:
     networks:
       - core-network
     restart: unless-stopped
+
   ors:
     build:
       context: ./ors
     container_name: ors
-    ports:
-      - "8081:8082"
     volumes:
       - ./ors/graphs:/home/ors/graphs
       - ./ors/logs:/home/ors/logs
@@ -169,6 +197,25 @@ services:
       retries: 5
       start_period: 5m
     restart: unless-stopped
+
+  otp:
+    build: 
+      context: ./otp
+    container_name: otp
+    environment:
+      - JAVA_OPTS=-Xmx5G -Xms1G
+    networks:
+      - core-network
+    command: "--load --serve"
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuators/health"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 7m
 
 volumes:
   postgres_data:
