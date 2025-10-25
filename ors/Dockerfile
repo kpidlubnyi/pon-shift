@@ -1,13 +1,22 @@
-FROM openrouteservice/openrouteservice:v8.0.0
+FROM openjdk:21-jdk-slim
 
-COPY conf/ors-config.yml home/ors/config/ors-config.yml
+WORKDIR /ors
 
-COPY files/*.osm.pbf /home/ors/files/
+RUN apt-get update \
+    && apt-get install -y curl lsof \
+    && curl -L -O https://github.com/GIScience/openrouteservice/releases/download/v8.0.0/ors.jar \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p files graphs_build graphs_ready flags
 
-RUN mkdir -p /home/ors/graphs /home/ors/elevation_cache /home/ors/logs \
-    && chown -R 1000:1000 /home/ors
+COPY conf /ors/conf
+COPY files /ors/files
+COPY graphs_build /ors/graphs_build
+COPY graphs_ready /ors/graphs_ready
+COPY entrypoint.sh /ors/entrypoint.sh
 
-ENV REBUILD_GRAPHS=TRUE
-ENV CONTAINER_LOG_LEVEL=INFO
-ENV XMS=3g
-ENV XMX=4g
+RUN chmod +x /ors/entrypoint.sh
+
+EXPOSE 8082
+
+ENTRYPOINT ["sh", "/ors/entrypoint.sh"]

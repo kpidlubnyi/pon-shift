@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
-NEW_MAP_FLAG="new_map_is_available"
-NEW_GTFS_FLAG="there_is_new_gtfs"
-GRAPH_READY_FLAG="new_graph_is_ready"
+NEW_MAP_FLAG="./flags/otp_there_is_new_map"
+NEW_GTFS_FLAG="./flags/otp_there_is_new_gtfs"
+GRAPH_READY_FLAG="./flags/otp_new_graph_is_ready"
 OTP_PID=""
 
 with_rebuilding() {
@@ -12,14 +12,14 @@ with_rebuilding() {
 }
 
 build_street_graph() {
-    java -Xmx5G -Xms3G -jar otp-shaded-2.8.1.jar --buildStreet .
+    java $JAVA_OPTS -jar otp-shaded-2.8.1.jar --buildStreet .
     echo "Street graph rebuild complete. Recreating transit graph..."
     touch "$NEW_GTFS_FLAG"
     rm -f "$NEW_MAP_FLAG"
 }
 
 build_transit_graph() {
-    java -Xmx5G -Xms3G -jar otp-shaded-2.8.1.jar --loadStreet --save .
+    java $JAVA_OPTS -jar otp-shaded-2.8.1.jar --loadStreet --save .
     echo "Transit graph rebuild complete. Creating readiness flag..."
     touch "$GRAPH_READY_FLAG"
     rm -f "$NEW_GTFS_FLAG"
@@ -54,7 +54,7 @@ serve_transit_graph() {
     fi
     
     echo "Starting OTP Server on port $PORT..."
-    java -Xmx5G -Xms3G -jar otp-shaded-2.8.1.jar --load --serve . &
+    java $JAVA_OPTS -jar otp-shaded-2.8.1.jar --load --serve . &
     OTP_PID=$!
     
     rm -f "$GRAPH_READY_FLAG"
@@ -63,9 +63,6 @@ serve_transit_graph() {
 
 trap 'echo "Shutting down..."; [ -n "$OTP_PID" ] && kill $OTP_PID 2>/dev/null; exit 0' TERM INT
 
-echo "Building street graph..."
-with_rebuilding build_street_graph
-echo "Street graph has been built successfully!"
 
 while true; do
     if [ -n "$OTP_PID" ] && ! kill -0 "$OTP_PID" 2>/dev/null; then

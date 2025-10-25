@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
     curl \
     netcat-openbsd \
     postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    mkdir flags
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 

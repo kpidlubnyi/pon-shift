@@ -8,7 +8,22 @@ from .services.tasks import *
 from .services.redis import *
 from .services.mongo import *
 
+
 logger = logging.getLogger(__name__)
+
+
+@worker_ready.connect
+def on_worker_ready(sender, **kwargs):
+    """Starts when the worker is ready"""
+    if 'gtfs@' in sender.hostname:
+        logger.info("GTFS worker ready! Running initial GTFS check...")
+        check_gtfs_updates.apply_async()
+        logger.info("Initial GTFS check scheduled!")
+    elif 'default@' in sender.hostname:
+        logger.info('Default worker ready! Running initial OSM check...')
+        check_osm_update.apply_async()
+        logger.info('Initial OSM check scheduled!')
+
 
 @shared_task
 def check_gtfs_updates():
@@ -21,17 +36,16 @@ def check_gtfs_updates():
 
         feed = get_recent_feed(carrier)
 
-        if not is_feed_new(feed, carrier):
-            logger.info(f'GTFS for {carrier} carrier has not been updated since the last check.')
-            continue
-        else:
+        if is_feed_new(feed, carrier):
             if not was_any_updated:
-                notify_otp_builder()
                 was_any_updated = True
-            
+                notify_about_new_gtfs()
+
             logger.info(f"There is new GTFS for {carrier} carrier!")
             update_gtfs.apply_async(args=[feed, carrier])
-        
+        else:
+            logger.info(f'GTFS for {carrier} carrier has not been updated since the last check.')
+            continue
 
 @shared_task(queue = 'gtfs_updates')
 def update_gtfs(feed, carrier: str):
@@ -49,14 +63,6 @@ def update_gtfs(feed, carrier: str):
     backup_from_regular_tables()
     logger.info('The backup was successful!')
     gc.collect()
-
-@worker_ready.connect
-def on_worker_ready(sender, **kwargs):
-    """Starts when the worker is ready"""
-    if 'gtfs@' in sender.hostname:
-        logger.info("GTFS worker ready! Running initial check...")
-        check_gtfs_updates.apply_async()
-        logger.info("Initial GTFS check scheduled!")
         
 @shared_task
 def update_gtfs_realtime(feed_name):
@@ -106,3 +112,10 @@ def update_scooter_data():
     except Exception as e:
         logger.error(f'Error during scooter data update: {e}')
     return
+
+@shared_task
+def check_osm_update():
+    logger.info('OSM update check started! Checking...')
+    if osm_is_new():
+        logger.info('There is new OSM Map! Notifying services...')
+        notify_about_new_map()

@@ -31,7 +31,56 @@ REQUIRED_MODELS = {
     'transfers': TransferStaging,
 }
 
-OTP_FLAG_FILE = "/var/opentripplanner/there_is_new_gtfs"
+
+FLAGS_DIR = "/app/flags"
+
+def ensure_flags_dir():
+    """Make sure the shared flag directory exists and is writable."""
+    if not os.path.exists(FLAGS_DIR):
+        try:
+            os.makedirs(FLAGS_DIR, exist_ok=True)
+            logger.info(f"Created missing flags directory: {FLAGS_DIR}")
+        except Exception as e:
+            logger.error(f"Failed to create flags directory {FLAGS_DIR}: {e}")
+            raise
+
+
+def create_flag_file(service: str, about: str):
+    """
+    Creates a flag file for ORS/OTP so that their watchdog containers 
+    can detect and rebuild graphs with new data.
+    """
+    assert service in {'ors', 'otp'}, f"Invalid service: {service}"
+    assert about in {'map', 'gtfs'}, f"Invalid flag type: {about}"
+
+    ensure_flags_dir()
+    flag_file = f"{service}_there_is_new_{about}"
+    path = os.path.join(FLAGS_DIR, flag_file)
+
+    try:
+        if not os.path.exists(path):
+            with open(path, "w") as f:
+                f.write(".")
+            logger.info(f"Flag file created: {path}")
+        else:
+            logger.info(f"Flag file already exists: {path}")
+    except Exception as e:
+        logger.error(f"Failed to create flag file {path}: {e}")
+
+
+def notify_about_new_gtfs():
+    """Notify OTP watchdog about new GTFS data, unless it's the first import."""
+    if CarrierStaging.objects.count() == 0:
+        logger.info("It's the first GTFS import, skipping OTP graph rebuild.")
+        return
+
+    create_flag_file('otp', 'gtfs')
+
+
+def notify_about_new_map():
+    """Notify both ORS and OTP watchdogs about new map availability."""
+    create_flag_file('otp', 'map')
+    create_flag_file('ors', 'map')
 
 
 def check_task_availability(carrier: str) -> bool:
@@ -43,24 +92,6 @@ def check_task_availability(carrier: str) -> bool:
         return False
     
     return True
-
-def notify_otp_builder():
-    """
-    Creates a flag file for OTP so that the otp-watchdog gives the command to build a graph with new data.
-    If the file already exists, do nothing.
-    """
-    try:
-        if (is_it_first_time := lambda: CarrierStaging.objects.all().count() == 0):
-            logger.info("It's first time, no needs to recreate OTP graph.")
-            return
-        if not os.path.exists(OTP_FLAG_FILE):
-            with open(OTP_FLAG_FILE, "w") as f:
-                f.write(".")
-            logger.info(f"GTFS flag created at {OTP_FLAG_FILE}")
-        else:
-            logger.warning(f"GTFS flag already exists at {OTP_FLAG_FILE}")
-    except Exception as e:
-        logger.error(f"Failed to create GTFS flag: {e}")
 
 def delete_old_gtfs_data(carrier: str):
     """Deletes old data for this carrier from staging tables"""
@@ -185,14 +216,14 @@ def get_recent_feed(carrier: str):
     return feed.json()
 
 def is_feed_new(feed, carrier:str):
-    redis_sha = get_redis_sha(carrier)
+    redis_sha = get_hash_from_redis(carrier)
     feed_sha = get_from_feed(feed, 'sha1')
 
     return feed_sha != redis_sha
 
 def update_sha_in_redis(feed, carrier:str):
     feed_sha = get_from_feed(feed, 'sha1')
-    set_sha_in_redis(feed_sha, carrier)
+    set_hash_in_redis(feed_sha, carrier)
 
 def get_gtfs(feed):
     url = get_from_feed(feed, 'url')

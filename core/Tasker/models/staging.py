@@ -86,7 +86,7 @@ class StopStaging(models.Model):
 
     carrier = models.ForeignKey(CarrierStaging, on_delete=models.CASCADE)
     stop_id = models.CharField(max_length=10, primary_key=True)
-    stop_name = models.CharField(max_length=32)
+    stop_name = models.CharField(max_length=64)
     stop_code = models.CharField(max_length=8, null=True)
     platform_code = models.CharField(max_length=8, null=True)
     stop_lat = models.FloatField()
@@ -94,9 +94,9 @@ class StopStaging(models.Model):
     location_type = models.IntegerField(choices=LocationTypeChoice, null=True)
     parent_station = models.CharField(max_length=8, null=True)
     wheelchair_boarding = models.IntegerField(choices=WheelChairBoardingChoice, null=True)
-    stop_name_stem = models.CharField(max_length=32, null=True)
+    stop_name_stem = models.CharField(max_length=64, null=True)
     town_name = models.CharField(max_length=32, null=True)
-    street_name = models.CharField(max_length=32, null=True)
+    street_name = models.CharField(max_length=128, null=True)
 
     _base_model = Stop
 
@@ -126,7 +126,7 @@ class TripStaging(models.Model):
     service_id = models.CharField(max_length=32)
     shape = models.ForeignKey(ShapeStaging, on_delete=models.CASCADE)
     trip_short_name = models.CharField(max_length=32, null=True)
-    trip_headsign = models.CharField(max_length=32)
+    trip_headsign = models.CharField(max_length=128)
     direction_id = models.IntegerField(choices=DirectionChoice)
     wheelchair_accessible = models.IntegerField(choices=WheelchairAccessChoice, null=True)
     hidden_block_id = models.IntegerField(null=True, blank=True)

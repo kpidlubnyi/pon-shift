@@ -74,7 +74,7 @@ class Stop(models.Model):
 
     carrier = models.ForeignKey(Carrier, on_delete=models.CASCADE)
     stop_id = models.CharField(max_length=10, primary_key=True)
-    stop_name = models.CharField(max_length=32)
+    stop_name = models.CharField(max_length=64)
     stop_code = models.CharField(max_length=8, null=True)
     platform_code = models.CharField(max_length=8, null=True)
     stop_lat = models.FloatField()
@@ -82,9 +82,9 @@ class Stop(models.Model):
     location_type = models.IntegerField(choices=LocationTypeChoice, null=True)
     parent_station = models.CharField(max_length=8, null=True)
     wheelchair_boarding = models.IntegerField(choices=WheelChairBoardingChoice, null=True)
-    stop_name_stem = models.CharField(max_length=32, null=True)
+    stop_name_stem = models.CharField(max_length=64, null=True)
     town_name = models.CharField(max_length=32, null=True)
-    street_name = models.CharField(max_length=32, null=True)
+    street_name = models.CharField(max_length=128, null=True)
 
     def __str__(self):
         stop_name = Stop.objects.get(stop_id=self.parent_station).stop_name if self.parent_station else self.stop_name
@@ -112,7 +112,7 @@ class Trip (models.Model):
     service_id = models.CharField(max_length=32)
     shape = models.ForeignKey(Shape, on_delete=models.CASCADE)
     trip_short_name = models.CharField(max_length=32, null=True)
-    trip_headsign = models.CharField(max_length=32)
+    trip_headsign = models.CharField(max_length=128)
     direction_id = models.IntegerField(choices=DirectionChoice)
     wheelchair_accessible = models.IntegerField(choices=WheelchairAccessChoice, null=True)
     hidden_block_id = models.IntegerField(null=True, blank=True)

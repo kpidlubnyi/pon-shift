@@ -8,7 +8,7 @@ services:
       - ./core:/app
       - static_volume:/app/static
       - logs_volume:/app/logs
-      - ./otp:/otp
+      - shared_flags:/app/flags
     ports:
       - "8001:8000"
     networks:
@@ -19,8 +19,6 @@ services:
       redis:
         condition: service_healthy
       mongo-db:
-        condition: service_healthy
-      ors:
         condition: service_healthy
     env_file:
       - .env
@@ -180,30 +178,25 @@ services:
       context: ./ors
     container_name: ors
     volumes:
-      - ./ors/graphs:/home/ors/graphs
-      - ./ors/logs:/home/ors/logs
-      - ./ors/elevation_cache:/home/ors/elevation_cache
-      - ./ors/files:/home/ors/files
-      - ./ors/conf:/home/ors/config
-    environment:
-      REBUILD_GRAPHS: "True"
-      CONTAINER_LOG_LEVEL: "INFO"
-      XMS: 3g
-      XMX: 4g
+      - shared_flags:/ors/flags
     networks:
       - core-network
+    environment:
+      - JAVA_OPTS=-Xmx4G -Xms2G
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/ors/v2/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 5m
+      start_period: 2m30s
     restart: unless-stopped
 
   otp:
     build: 
       context: ./otp
     container_name: otp
+    volumes:
+      - shared_flags:/otp/flags
     environment:
       - JAVA_OPTS=-Xmx5G -Xms3G
     networks:
@@ -228,6 +221,8 @@ volumes:
   static_volume:
     driver: local
   logs_volume:
+    driver: local
+  shared_flags:
     driver: local
 
 networks:

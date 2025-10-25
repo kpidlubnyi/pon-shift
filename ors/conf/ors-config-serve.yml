@@ -1,0 +1,21 @@
+ors:
+  engine:
+    init_threads: 1
+    preparation_mode: false
+    source_file: ./files/mazowieckie-latest.osm.pbf
+    graphs_root_path: ./graphs_ready
+    profiles:
+      walking:
+        enabled: true
+        profile: foot-walking
+        elevation: true
+        encoder_options:
+          block_fords: false
+
+logging:
+  level:
+    root: WARN
+    org.heigit: INFO
+  file:
+    name: ./logs/ors.log
+

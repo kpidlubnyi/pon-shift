@@ -38,18 +38,18 @@ def redis_operation(func):
     return wrapper
 
 @redis_operation
-def set_sha_in_redis(sha, carrier):
-    key = f'{carrier}_sha1'
-    return redis_client.set(key, sha)
+def set_hash_in_redis(hash:str, carrier:str, suffix:str = 'sha1'):
+    key = f'{carrier}_{suffix}'
+    return redis_client.set(key, hash)
 
 @redis_operation
-def get_redis_sha(carrier):
-    key = f'{carrier}_sha1'
+def get_hash_from_redis(carrier:str, suffix:str = 'sha1'):
+    key = f'{carrier}_{suffix}'
     sha = redis_client.get(key)
 
     if not sha:
-        set_sha_in_redis('initial value', carrier)
-        return get_redis_sha(carrier)
+        set_hash_in_redis('initial value', carrier)
+        return get_hash_from_redis(carrier)
     else:
         return sha
         
