@@ -19,22 +19,6 @@ core/logs/
 htmlcov/
 .coverage
 
-#ORS files
-ors/elevation_cache/*
-!ors/elevation_cache/.gitkeep
-
-ors/files/*
-!ors/files/.gitkeep
-
-ors/graphs/*
-!ors/graphs/.gitkeep
-
-ors/logs/*
-!ors/logs/.gitkeep
-
-
 # Other
 todo.txt
 analisys.ipynb
-test.py
-gtfs/
