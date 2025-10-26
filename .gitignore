@@ -12,9 +12,6 @@ wheels/
 # Environment files
 .env
 
-# Logs
-core/logs/
-
 # Test coverage files
 htmlcov/
 .coverage
