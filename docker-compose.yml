@@ -67,6 +67,8 @@ services:
     command: ['mongod', '--config', "/etc/mongod.conf"]
     networks:
       - core-network
+    ports:
+      - 27018:27017
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
@@ -81,6 +83,8 @@ services:
       - redis_data:/data
     networks:
       - core-network
+    ports:
+      - 6380:6379
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     healthcheck:
@@ -179,6 +183,8 @@ services:
     container_name: ors
     volumes:
       - shared_flags:/ors/flags
+    ports:
+      - 8082:8082
     networks:
       - core-network
     environment:
