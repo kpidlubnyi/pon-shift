@@ -11,6 +11,7 @@ from ..exceptions import *
 from Tasker.models.common import *
 from ..serializers import *
 from Routes.services.views import *
+from Routes.serializers import *
 
 
 logger = getLogger(__name__)
@@ -84,7 +85,7 @@ def intercept_bad_stop_id(stop_id: str) -> str:
 
     return good_stop_id
 
-def get_available_routes(stoptime_objs: BaseManager[StopTime]) -> list[str]:
+def get_available_routes(stoptime_objs: BaseManager[StopTime]) -> list[dict]:
     """Returns a list of routes that stop at this stop, based on the filtered dataset of transport stops for the required stop.."""
     trips_of_stop = stoptime_objs \
     .distinct('trip__trip_id') \
@@ -92,10 +93,9 @@ def get_available_routes(stoptime_objs: BaseManager[StopTime]) -> list[str]:
 
     available_routes = Route.objects \
         .filter(trip__trip_id__in=trips_of_stop) \
-        .distinct('route_id') \
-        .values_list('route_id', flat=True)
+        .distinct('route_id')
     
-    return list(available_routes)
+    return RouteBriefSerializer(available_routes, many=True).data
 
 
 d = defaultdict(lambda: 'PcS')
@@ -133,3 +133,36 @@ def get_recent_trips(carrier:str, stoptime_objs: BaseManager[StopTime], n: int =
         recent_trips.append(stop_time)
 
     return recent_trips
+
+def add_carrier_data(stop: dict):
+    carrier = stop['carrier']
+    return CarrierSerializer(carrier).data
+
+def extended_info(stop: dict) -> tuple[list[str], str]:
+    stop_id = intercept_bad_stop_id(stop['stop_id'])
+
+    if stop_id == '7014M:P1':
+        stop_ids = [stop_id, stop_id[:-1]+'2']
+    else:
+        stop_ids = [stop_id]
+    
+    stoptime_objs = StopTime.objects.filter(stop_id__in=stop_ids)
+    available_routes = get_available_routes(stoptime_objs)
+    stop['available_routes'] = available_routes
+
+    return stop
+
+
+def get_stops(**filters) -> list[dict]:
+    try:
+        if filters:
+            stops = Stop.objects.filter(**filters)
+            stops = StopBriefSerializer(stops, many=True).data
+            stops = [extended_info(stop) for stop in stops]
+        else:
+            stops = Stop.objects.all().distinct('stop_name')
+            stops = StopOnlyNameSerializer(stops, many=True).data
+    except:
+        raise StopNotFoundError(**filters)
+
+    return sorted(stops, key=lambda x: x['stop_name']) 

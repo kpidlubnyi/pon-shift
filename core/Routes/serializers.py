@@ -8,9 +8,20 @@ from Tasker.models.common import *
 from Stops.serializers import TripSerializer
 
 
-class RouteSerializer(serializers.ModelSerializer):
-    most_common_trips = serializers.SerializerMethodField()
+class BaseRouteSerializer(serializers.ModelSerializer):
+    route_type = serializers.CharField(source='get_route_type_display')
     
+    class Meta:
+        model = Route
+        fields = (
+            'route_id',
+            'route_type'
+        )
+
+
+class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
+    most_common_trips = serializers.SerializerMethodField()
+        
     def get_most_common_trips(self, obj):
         date= tz.now().strftime('%Y-%m-%d') + ':'
         data = Trip.objects.filter(
@@ -42,12 +53,20 @@ class RouteSerializer(serializers.ModelSerializer):
 
         trips = [TripSerializer(trip).data for trip in trips]
         result = {
-            'stanom_na': date,
+            'date': date,
             'trips': trips
         }
 
         return result
 
-    class Meta:
-        model = Route
-        fields = ['route_id', 'route_short_name', 'route_long_name', 'route_type', 'most_common_trips']
+    class Meta(BaseRouteSerializer.Meta):
+        fields = BaseRouteSerializer.Meta.fields + (
+            'route_short_name', 
+            'route_long_name', 
+            'most_common_trips'
+        )
+
+
+class RouteBriefSerializer(BaseRouteSerializer, serializers.ModelSerializer):
+    class Meta(BaseRouteSerializer.Meta):
+        pass

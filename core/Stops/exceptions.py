@@ -16,8 +16,8 @@ class AddressNotFoundError(NotFoundError):
     
 class StopNotFoundError(NotFoundError):
     def __init__(self, stop=None, message='stop was not found', **kwargs):
-        stop_name = kwargs['stop_name']
-        stop_code = kwargs['stop_code']
+        stop_name = kwargs.get('stop_name')
+        stop_code = kwargs.get('stop_code')
         
         if not stop:
             stop = f'{stop_name} {stop_code}'

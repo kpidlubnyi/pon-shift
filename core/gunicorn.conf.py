@@ -1,6 +1,6 @@
 import multiprocessing
 
-bind = "0.0.0.0:8000"
+bind = "0.0.0.0:8001"
 backlog = 2048
 
 workers = min(3, (multiprocessing.cpu_count() * 2) + 1)

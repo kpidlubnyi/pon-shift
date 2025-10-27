@@ -20,39 +20,48 @@ class NearestStopsQueryParamsSerializer(serializers.Serializer):
         default = 1
     )
 
-class StopBriefSerializer(serializers.ModelSerializer):
 
-    class Meta: 
-        model = Stop
-        fields = [
-            'stop_id',
-            'stop_name',
-            'stop_code',
-            'wheelchair_boarding',
-        ]
-            
+class CarrierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Carrier
+        fields = '__all__'
+
+
+class BaseStopSerializer(serializers.ModelSerializer):
+    carrier = serializers.SerializerMethodField()
+
     def to_representation(self, instance):
         p_station = instance.parent_station
         
         if p_station:
             instance = Stop.objects.get(stop_id=p_station)
 
-        ret = super().to_representation(instance)
-        return ret
+        return super().to_representation(instance)
+        
+    def get_carrier(self, obj):
+        return CarrierSerializer(obj.carrier).data
     
-class StopOnlyNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stop
-        fields = ['stop_name']
+        fields = (
+            'stop_id',
+            'stop_name',
+            'carrier'
+        )
+    
 
-    def to_representation(self, instance):
-        p_station = instance.parent_station
-        
-        if p_station:
-            instance = Stop.objects.get(stop_id=p_station)
+class StopBriefSerializer(BaseStopSerializer, serializers.ModelSerializer):
+    class Meta(BaseStopSerializer.Meta):
+        fields = BaseStopSerializer.Meta.fields + (
+            'stop_code',
+            'wheelchair_boarding',
+        )
 
-        ret = super().to_representation(instance)
-        return ret
+
+class StopOnlyNameSerializer(BaseStopSerializer, serializers.ModelSerializer):
+    class Meta(BaseStopSerializer.Meta):
+        pass
+
 
 class StopTimeSerializer(serializers.ModelSerializer):
     stop = StopBriefSerializer()
@@ -90,4 +99,10 @@ class TripSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Trip
-        fields = ['trip_id', 'trip_headsign', 'direction_id', 'wheelchair_accessible', 'stops']
+        fields = (
+            'trip_id', 
+            'trip_headsign', 
+            'direction_id', 
+            'wheelchair_accessible', 
+            'stops'
+        )
