@@ -6,6 +6,8 @@ import requests
 from django.conf import settings
 
 from .views import *
+from Tasker.models import *
+from ..serializers import *
 
 
 type LocationPoint = tuple[Decimal, Decimal]
@@ -75,3 +77,8 @@ def show_route(shape_sequence: list[LocationPoint]) -> str:
             folium.Marker(point, popup=f'Point {i+1}').add_to(m)
 
     return m._repr_html_()
+
+def get_route(route_id:str) -> dict:
+    route = Route.objects.get(route_id=route_id)
+    route = RouteDetailsSerializer(route).data
+    return route

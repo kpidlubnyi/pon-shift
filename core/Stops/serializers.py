@@ -44,17 +44,17 @@ class BaseStopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Stop
         fields = (
-            'stop_id',
             'stop_name',
-            'carrier'
+            'stop_code'
         )
     
 
 class StopBriefSerializer(BaseStopSerializer, serializers.ModelSerializer):
     class Meta(BaseStopSerializer.Meta):
         fields = BaseStopSerializer.Meta.fields + (
-            'stop_code',
+            'stop_id',
             'wheelchair_boarding',
+            'carrier'
         )
 
 

@@ -9,9 +9,7 @@ from .services.views import *
 
 class RouteInfo(APIView):
     def get(self, request, route_id):
-        route = Route.objects.get(route_id=route_id)
-        response = RouteSerializer(route).data
-
+        response = get_route(route_id)
         return JsonResponse(response, status=status.HTTP_200_OK)
 
 class ShowRoute(APIView):
