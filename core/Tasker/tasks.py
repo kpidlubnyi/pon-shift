@@ -25,6 +25,13 @@ def on_worker_ready(sender, **kwargs):
         logger.info('Initial OSM check scheduled!')
 
 
+@shared_task(queue='gtfs_updates')
+def refresh_route_stops_mv():
+    with connection.cursor() as cursor:
+        cursor.execute('REFRESH MATERIALIZED VIEW tasker_trip_stops;')
+    logger.info('RouteStops materialized view was refreshed!')
+
+
 @shared_task
 def check_gtfs_updates():
     was_any_updated = False
@@ -46,6 +53,10 @@ def check_gtfs_updates():
         else:
             logger.info(f'GTFS for {carrier} carrier has not been updated since the last check.')
             continue
+
+    if was_any_updated:
+        refresh_route_stops_mv.apply_async()
+            
 
 @shared_task(queue = 'gtfs_updates')
 def update_gtfs(feed, carrier: str):

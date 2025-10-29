@@ -17,7 +17,7 @@
     },
     {
       "type": "gtfs",
-      "feedId": "ZTM",
+      "feedId": "WTP",
       "source": "https://mkuran.pl/gtfs/warsaw.zip"
     }
   ]

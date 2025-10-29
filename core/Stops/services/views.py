@@ -107,7 +107,7 @@ def get_recent_trips(carrier:str, stoptime_objs: BaseManager[StopTime], n: int =
     date, time = datetime.date(), datetime.time()
 
     match carrier:
-        case 'ZTM':
+        case 'WTP':
             trip_filter = (
                 Q(trip__trip_id__contains=date) & 
                 Q(trip__trip_id__contains=d[day_of_week])

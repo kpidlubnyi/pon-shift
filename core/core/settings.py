@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR.parent / '.env.local')
+load_dotenv(BASE_DIR.parent / '.env')
 
 SECRET_KEY = 'django-insecure-hqkj0wxp3ims=qr)o$vvd=$qpbhei%1wf^gpa0cuz_^xghjh-a'
 
@@ -24,15 +24,15 @@ BOLT_SCOOTERS_API_URL = getenv('BOLT_SCOOTERS_API_URL')
 BOLT_DEVICE_ID = getenv('BOLT_DEVICE_ID')
 BOLT_PHONE_NUMBER = getenv('BOLT_PHONE_NUMBER')
 
-ALLOWED_CARRIERS = ['WKD', 'ZTM', 'KM']
+ALLOWED_CARRIERS = ['WKD', 'KM', 'WTP']
 
 ONESTOP_IDS = {
     carrier: getenv(f'{carrier}_ONESTOP_ID')
     for carrier in ALLOWED_CARRIERS
 }
 ONESTOP_IDS.update({
-    'ZTM_RT_V': getenv('ZTM_RT_VEHICLES_ONESTOP_ID'),
-    'ZTM_RT_A': getenv('ZTM_RT_ALERTS_ONESTOP_ID'),
+    'WTP_RT_V': getenv('WTP_RT_VEHICLES_ONESTOP_ID'),
+    'WTP_RT_A': getenv('WTP_RT_ALERTS_ONESTOP_ID'),
     'WKD_RT_V': getenv('WKD_RT_ONESTOP_ID'),
 })
 

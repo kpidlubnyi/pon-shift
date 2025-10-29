@@ -9,13 +9,13 @@
     {
       "type": "real-time-alerts",
       "url": "https://mkuran.pl/gtfs/warsaw/alerts.pb",
-      "feedId": "ZTM",
+      "feedId": "WTP",
       "frequency": "15s"
     },
     {
       "type": "vehicle-positions",
       "url": "https://mkuran.pl/gtfs/warsaw/vehicles.pb",
-      "feedId": "ZTM",
+      "feedId": "WTP",
       "frequency": "15s"
     }
   ]
