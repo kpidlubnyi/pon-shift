@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
                 CREATE MATERIALIZED VIEW IF NOT EXISTS tasker_trip_stops AS
                 (
                 SELECT
-                    row_number() over () id,
                     s.trip_id,
                     t.direction_id,
                     route_id,
@@ -21,6 +20,10 @@ class Migration(migrations.Migration):
                 JOIN "Tasker_Trips" t USING(trip_id)
                 GROUP BY route_id, s.trip_id, t.direction_id
                 );
+
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_tasker_trip_stops_trip_id
+                    ON tasker_trip_stops(trip_id);
+
                 CREATE INDEX IF NOT EXISTS idx_tasker_trip_stops_route_id
                     ON tasker_trip_stops(route_id);
             """,
