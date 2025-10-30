@@ -1,12 +1,12 @@
 from geopy.geocoders import Nominatim
 from logging import getLogger
-from collections import defaultdict
 import heapq
 
 from django.db.models.manager import BaseManager
 from django.db.models import Q
 from django.utils import timezone as tz
 
+from .common import *
 from ..exceptions import *
 from Tasker.models.common import *
 from ..serializers import *
@@ -98,10 +98,6 @@ def get_available_routes(stoptime_objs: BaseManager[StopTime]) -> list[dict]:
     return RouteBriefSerializer(available_routes, many=True).data
 
 
-d = defaultdict(lambda: 'PcS')
-d.update({5:'PtS', 6:'SbS', 7:'NdS'})
-
-
 def get_recent_trips(carrier:str, stoptime_objs: BaseManager[StopTime], n: int = 10, datetime = tz.localtime(tz.now())):
     day_of_week = datetime.isoweekday()
     date, time = datetime.date(), datetime.time()
@@ -110,7 +106,7 @@ def get_recent_trips(carrier:str, stoptime_objs: BaseManager[StopTime], n: int =
         case 'WTP':
             trip_filter = (
                 Q(trip__trip_id__contains=date) & 
-                Q(trip__trip_id__contains=d[day_of_week])
+                Q(trip__trip_id__contains=get_wtp_weekday(day_of_week))
             )
         case 'WKD':
             carrier = Carrier.objects.get(carrier_code=carrier)

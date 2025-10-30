@@ -1,12 +1,10 @@
-from collections import defaultdict
-
 from rest_framework import serializers
-from django.db.models import Count, Min
+from django.db.models import Count, Q, QuerySet, Min, Max
 from django.utils import timezone as tz
 
 from Tasker.models import *
-from Stops.serializers import StopOnlyNameSerializer
-
+from Stops.serializers import *
+from Stops.services.common import *
 
 class RouteStopsMVSerializer(serializers.ModelSerializer):
     stops = serializers.SerializerMethodField()
@@ -38,6 +36,7 @@ class BaseRouteSerializer(serializers.ModelSerializer):
 
 class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
     all_possible_routes = serializers.SerializerMethodField()
+    now_on_track = serializers.SerializerMethodField()
     
     def get_all_possible_routes(self, obj: Route):
         routes = {}
@@ -46,7 +45,7 @@ class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
             routes_qs = RouteStopsMV.objects.filter(route_id=obj.route_id, direction_id=drctn)
             
             main_route_qs = (routes_qs
-                .annotate(count_of_uses=Count('id'))
+                .annotate(count_of_uses=Count('trip_id'))
                 .order_by('-count_of_uses')
                 .first()
             )
@@ -76,11 +75,59 @@ class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
 
         return routes
     
+    def get_trips_for_date(self, obj: Route, date: tz.datetime = tz.localtime(tz.now())) -> QuerySet[Trip]:
+        trip_filter = (Q(route_id=obj.route_id) & Q(carrier__id=obj.carrier.pk))
+        
+        if obj.carrier.carrier_code == 'WTP':
+            trip_filter &= (
+                Q(trip_id__contains=date.strftime('%Y-%m-%d')) & 
+                Q(trip_id__contains=get_wtp_weekday(date.isoweekday()))
+            )
+
+        trips = Trip.objects.filter(trip_filter)
+        services = (
+            trips
+                .distinct('service_id')
+                .values_list('service_id', flat=True)
+            )
+        
+        excluded_services = (
+            CalendarDate.objects
+                .filter(
+                    service_id__in=services,
+                    exception_type=2,
+                    date=date
+                )
+                .distinct('service_id')
+                .values_list('service_id', flat=True))
+        
+        return trips.exclude(service_id__in=excluded_services)
+
+    def get_now_on_track(self, obj: Route):
+        now = tz.localtime(tz.now())
+        trips = self.get_trips_for_date(obj)
+
+        trips_active_now = (StopTime.objects
+            .filter(trip_id__in=trips.values_list('trip_id',flat=True))
+            .values('trip_id')
+            .annotate(
+                min_time=Min('arrival_time'),
+                max_time=Max('departure_time'))
+            .filter(
+                min_time__lt=now,
+                max_time__gt=now)
+            .values_list('trip_id', flat=True)
+        )
+
+        trips = trips.filter(trip_id__in=trips_active_now)
+        return TripBriefSerializer(trips, many=True).data
+        
     class Meta(BaseRouteSerializer.Meta):
         fields = BaseRouteSerializer.Meta.fields + (
             'route_short_name', 
             'route_long_name', 
             'all_possible_routes',
+            'now_on_track',
         )
 
 

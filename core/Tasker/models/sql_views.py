@@ -12,8 +12,7 @@ class RouteStopsMV(models.Model):
       - `stop_ids`: ordered list of stop IDs for the trip
     """
     
-    id = models.IntegerField(primary_key=True)
-    trip_id = models.CharField(max_length=64)
+    trip_id = models.CharField(max_length=64, primary_key=True)
     direction_id = models.IntegerField()
     route_id = models.CharField(max_length=8)
     stop_ids = ArrayField(models.CharField(max_length=16))

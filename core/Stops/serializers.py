@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from Tasker.models.common import *
+from Tasker.services.mongo import *
 
 
 class NearestStopsQueryParamsSerializer(serializers.Serializer):
@@ -85,16 +86,43 @@ class RecentTripStopTimeSerializer(StopTimeSerializer):
         model = StopTime
         fields = ['trip', 'arrival_time', 'on_request']
 
-class TripSerializer(serializers.ModelSerializer):
+
+class BaseTripSerializer(serializers.ModelSerializer):
+    route_name = serializers.SerializerMethodField()
+    has_realtime = serializers.SerializerMethodField()
+
+    def get_route_name(self, obj:Trip):
+        return obj.route.route_long_name
+    
+    def get_has_realtime(self, obj:Trip):
+        if get_rt_vehicle_data(obj.carrier.carrier_code, obj.trip_id):
+            return True
+        return False
+
+
+    class Meta:
+        model = Trip
+        fields = (
+            'trip_id',
+            'route_name',
+            'trip_headsign',
+            'wheelchair_accessible',
+            'fleet_type',
+            'has_realtime'
+        )
+
+
+class TripBriefSerializer(BaseTripSerializer, serializers.ModelSerializer):
+    class Meta(BaseTripSerializer.Meta):
+        pass
+
+
+class TripDetailsSerializer(serializers.ModelSerializer):
     stops = serializers.SerializerMethodField()
 
     def get_stops(self, obj):
         stop_times_obj = StopTime.objects.filter(trip_id=obj.trip_id)
-        stops = []
-
-        for stop in stop_times_obj:
-            stops.append(StopTimeBriefSerializer(stop).data)
-
+        stops = [StopTimeBriefSerializer(stop).data for stop in stop_times_obj]
         return stops
     
     class Meta:
