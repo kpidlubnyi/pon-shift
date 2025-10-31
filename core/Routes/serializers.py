@@ -75,36 +75,37 @@ class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
 
         return routes
     
-    def get_trips_for_date(self, obj: Route, date: tz.datetime = tz.localtime(tz.now())) -> QuerySet[Trip]:
-        trip_filter = (Q(route_id=obj.route_id) & Q(carrier__id=obj.carrier.pk))
-        
+    def get_trips_for_date(self, obj: Route, date=tz.localdate(tz.now())) -> QuerySet[Trip]:
+        trip_filter = Q(route_id=obj.route_id, carrier=obj.carrier)
+
         if obj.carrier.carrier_code == 'WTP':
-            trip_filter &= (
-                Q(trip_id__contains=date.strftime('%Y-%m-%d')) & 
-                Q(trip_id__contains=get_wtp_weekday(date.isoweekday()))
-            )
+            weekday_code = get_wtp_weekday(date.isoweekday())
+            trip_filter &= (Q(trip_id__contains=date) & Q(trip_id__contains=weekday_code))
 
         trips = Trip.objects.filter(trip_filter)
-        services = (
+
+        service_ids = trips.values_list('service_id', flat=True).distinct()
+
+        calendar_dates = CalendarDate.objects.filter(
+            service_id__in=service_ids,
+            date=date,
+        ).values('service_id', 'exception_type')
+
+        working_services = {
+            c['service_id'] for c in calendar_dates if c['exception_type'] == 1
+        }
+        excluded_services = {
+            c['service_id'] for c in calendar_dates if c['exception_type'] == 2
+        }
+
+        return (
             trips
-                .distinct('service_id')
-                .values_list('service_id', flat=True)
-            )
-        
-        excluded_services = (
-            CalendarDate.objects
-                .filter(
-                    service_id__in=services,
-                    exception_type=2,
-                    date=date
-                )
-                .distinct('service_id')
-                .values_list('service_id', flat=True))
-        
-        return trips.exclude(service_id__in=excluded_services)
+                .filter(service_id__in=working_services)
+                .exclude(service_id__in=excluded_services)
+        )
 
     def get_now_on_track(self, obj: Route):
-        now = tz.localtime(tz.now())
+        now = tz.localtime(tz.now()).time()
         trips = self.get_trips_for_date(obj)
 
         trips_active_now = (StopTime.objects
