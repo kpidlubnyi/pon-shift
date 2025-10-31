@@ -4,24 +4,9 @@ from django.utils import timezone as tz
 
 from Tasker.models import *
 from Stops.serializers import *
+from Trips.serializers import *
 from Stops.services.common import *
 
-class RouteStopsMVSerializer(serializers.ModelSerializer):
-    stops = serializers.SerializerMethodField()
-
-    def get_stops(self, obj):
-        stop_ids = obj.stop_ids
-        stops = Stop.objects.filter(stop_id__in=stop_ids)
-        stops_dict = {stop.stop_id: stop for stop in stops}
-        ordered_stops = [stops_dict[sid] for sid in stop_ids if sid in stops_dict]
-        return StopOnlyNameSerializer(ordered_stops, many=True).data
-
-    class Meta:
-        model = RouteStopsMV
-        fields = [
-            'trip_id',
-            'stops'
-        ]
 
 class BaseRouteSerializer(serializers.ModelSerializer):
     route_type = serializers.CharField(source='get_route_type_display')
@@ -42,7 +27,7 @@ class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
         routes = {}
 
         for drctn in {0, 1}:
-            routes_qs = RouteStopsMV.objects.filter(route_id=obj.route_id, direction_id=drctn)
+            routes_qs = TripStopsMV.objects.filter(route_id=obj.route_id, direction_id=drctn)
             
             main_route_qs = (routes_qs
                 .annotate(count_of_uses=Count('trip_id'))
@@ -54,8 +39,8 @@ class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
                 .distinct('stop_ids')
                 .exclude(stop_ids=main_route_qs.stop_ids)
             ) 
-            main_route = RouteStopsMVSerializer(main_route_qs).data
-            other_routes = RouteStopsMVSerializer(other_routes_qs, many=True).data
+            main_route = TripStopsMVSerializer(main_route_qs).data
+            other_routes = TripStopsMVSerializer(other_routes_qs, many=True).data
             
             
             main_route_stops = set()

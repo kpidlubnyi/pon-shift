@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Tasker', '0003_routestopsmv'),
+        ('Tasker', '0003_tripstopsmv_alter_calendardate_exception_type_and_more'),
     ]
 
     operations = [

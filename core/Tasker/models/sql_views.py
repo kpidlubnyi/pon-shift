@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
-class RouteStopsMV(models.Model):
+class TripStopsMV(models.Model):
     """
     Django ORM model for the 'tasker_trip_stops' materialized view.
 

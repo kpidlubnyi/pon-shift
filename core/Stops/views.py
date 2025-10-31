@@ -9,7 +9,6 @@ from .services.views import *
 from .serializers import *
 
 
-
 class AllStopsView(APIView):
     def get(self, request):
         stops = get_stops()
@@ -52,7 +51,7 @@ class NearestStops(APIView):
         limit = params['limit'].value
         
         stops = Stop.objects.all()
-        stop_ids = [StopBriefSerializer(stop).data['stop_id'] for stop in stops]
+        stop_ids = [stop.stop_id for stop in stops]
         stops = Stop.objects.filter(stop_id__in=stop_ids)
 
         nearest_stops = get_nearest_stops(address, stops, limit)

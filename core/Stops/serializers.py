@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from Tasker.models.common import *
-from Tasker.services.mongo import *
 
 
 class NearestStopsQueryParamsSerializer(serializers.Serializer):
@@ -46,7 +45,8 @@ class BaseStopSerializer(serializers.ModelSerializer):
         model = Stop
         fields = (
             'stop_name',
-            'stop_code'
+            'stop_code',
+            'wheelchair_boarding',
         )
     
 
@@ -54,14 +54,16 @@ class StopBriefSerializer(BaseStopSerializer, serializers.ModelSerializer):
     class Meta(BaseStopSerializer.Meta):
         fields = BaseStopSerializer.Meta.fields + (
             'stop_id',
-            'wheelchair_boarding',
             'carrier'
         )
 
 
-class StopOnlyNameSerializer(BaseStopSerializer, serializers.ModelSerializer):
+class StopOnMapBriefSerializer(BaseStopSerializer, serializers.ModelSerializer):
     class Meta(BaseStopSerializer.Meta):
-        pass
+        fields = BaseStopSerializer.Meta.fields + (
+            'stop_lat',
+            'stop_lon',
+        )
 
 
 class StopTimeSerializer(serializers.ModelSerializer):
@@ -81,56 +83,8 @@ class StopTimeBriefSerializer(StopTimeSerializer):
         model = StopTime
         fields = ['stop', 'on_request']
 
+
 class RecentTripStopTimeSerializer(StopTimeSerializer):
     class Meta:
         model = StopTime
         fields = ['trip', 'arrival_time', 'on_request']
-
-
-class BaseTripSerializer(serializers.ModelSerializer):
-    route_name = serializers.SerializerMethodField()
-    has_realtime = serializers.SerializerMethodField()
-
-    def get_route_name(self, obj:Trip):
-        return obj.route.route_long_name
-    
-    def get_has_realtime(self, obj:Trip):
-        if get_rt_vehicle_data(obj.carrier.carrier_code, obj.trip_id):
-            return True
-        return False
-
-
-    class Meta:
-        model = Trip
-        fields = (
-            'trip_id',
-            'route_name',
-            'trip_headsign',
-            'wheelchair_accessible',
-            'fleet_type',
-            'has_realtime'
-        )
-
-
-class TripBriefSerializer(BaseTripSerializer, serializers.ModelSerializer):
-    class Meta(BaseTripSerializer.Meta):
-        pass
-
-
-class TripDetailsSerializer(serializers.ModelSerializer):
-    stops = serializers.SerializerMethodField()
-
-    def get_stops(self, obj):
-        stop_times_obj = StopTime.objects.filter(trip_id=obj.trip_id)
-        stops = [StopTimeBriefSerializer(stop).data for stop in stop_times_obj]
-        return stops
-    
-    class Meta:
-        model = Trip
-        fields = (
-            'trip_id', 
-            'trip_headsign', 
-            'direction_id', 
-            'wheelchair_accessible', 
-            'stops'
-        )

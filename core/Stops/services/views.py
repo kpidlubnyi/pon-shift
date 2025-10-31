@@ -157,7 +157,7 @@ def get_stops(**filters) -> list[dict]:
             stops = [extended_info(stop) for stop in stops]
         else:
             stops = Stop.objects.all().distinct('stop_name')
-            stops = StopOnlyNameSerializer(stops, many=True).data
+            stops = StopBriefSerializer(stops, many=True).data
     except:
         raise StopNotFoundError(**filters)
 

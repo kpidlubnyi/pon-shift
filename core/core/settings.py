@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'Stops',
     'Routes',
     'Bikes',
+    'Trips',
 ]
 
 MIDDLEWARE = [

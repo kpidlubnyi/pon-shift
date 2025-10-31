@@ -26,17 +26,17 @@ def on_worker_ready(sender, **kwargs):
 
 
 @shared_task(queue='gtfs_updates')
-def refresh_route_stops_mv():
-    logger.info('Running RouteStop materialized view refresher...')
-    prev_ac = connection.autocommit
-    connection.autocommit = True
+def refresh_trip_stops_mv():
+    logger.info("Running TripStops materialized view refresher...")
+    
+    connection.close()
+    
+    with transaction.atomic():
+        with connection.cursor() as cursor:
+            cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY tasker_trip_stops;")
+    
+    logger.info("TripStops materialized view was refreshed successfully!")
 
-    with connection.cursor() as cursor:
-        cursor.execute('REFRESH MATERIALIZED VIEW CONCURRENTLY tasker_trip_stops;')
-
-    logger.info('RouteStops materialized view was refreshed!')
-
-    connection.autocommit = prev_ac
 @shared_task
 def check_gtfs_updates():
     was_any_updated = False
@@ -60,7 +60,7 @@ def check_gtfs_updates():
             continue
 
     if was_any_updated:
-        refresh_route_stops_mv.apply_async()
+        refresh_trip_stops_mv.apply_async()
             
 
 @shared_task(queue = 'gtfs_updates')
