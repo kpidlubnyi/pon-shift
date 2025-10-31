@@ -79,8 +79,14 @@ class AbstractStop(models.Model):
     town_name = models.CharField(max_length=32, null=True)
     street_name = models.CharField(max_length=128, null=True)
 
+    @property
+    def parent(self):
+        if not self.parent_station:
+            return None
+        return type(self).objects.filter(stop_id=self.parent_station).first()
+    
     def __str__(self):
-        stop_name = self.objects.get(stop_id=self.parent_station).stop_name if self.parent_station else self.stop_name
+        stop_name = self.parent.stop_name if self.parent else self.stop_name
         street_part = f'({self.street_name})' if self.street_name else ''
         return f'{stop_name} {self.stop_code}{street_part}'
 
