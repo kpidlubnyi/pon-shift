@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('stop_ids', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=16), size=None)),
             ],
             options={
-                'db_table': 'tasker_trip_stops',
+                'db_table': 'Tasker_trip_stops',
                 'managed': False,
             },
         ),

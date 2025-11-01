@@ -3,7 +3,7 @@ from django.contrib.postgres.fields import ArrayField
 
 class TripStopsMV(models.Model):
     """
-    Django ORM model for the 'tasker_trip_stops' materialized view.
+    Django ORM model for the 'Tasker_trip_stops' materialized view.
 
     This view stores pre-aggregated stop sequences for each trip, including:
       - `trip_id`: unique identifier of the trip
@@ -19,4 +19,4 @@ class TripStopsMV(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'tasker_trip_stops'
+        db_table = 'Tasker_trip_stops'

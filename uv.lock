@@ -293,6 +293,18 @@ wheels = [
 ]
 
 [[package]]
+name = "django-materialized-view"
+version = "0.1.6.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/10/2b/3ceb64cec478c449d74d03296a1dfed7f66b17f1af439fe71410e4f232a0/django-materialized-view-0.1.6.2.tar.gz", hash = "sha256:b99de6ad219434b9a6bd31c2cec98de0e4085f279185c2b4e8657b63ee2b883c", size = 38152, upload-time = "2023-08-25T10:46:11.881Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/85/7c735480d91beab280c96691c6fff8eb436a7c6ebc84285f0ce337bd222b/django_materialized_view-0.1.6.2-py3-none-any.whl", hash = "sha256:29b3fc859f11109f4b4476b9aaa5c54e66fe6cb22f4074d5295111dd75ae6ac1", size = 20020, upload-time = "2023-08-25T10:46:10.093Z" },
+]
+
+[[package]]
 name = "django-timezone-field"
 version = "7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -660,6 +672,7 @@ dependencies = [
     { name = "django" },
     { name = "django-celery-beat" },
     { name = "django-celery-results" },
+    { name = "django-materialized-view" },
     { name = "djangorestframework" },
     { name = "dotenv" },
     { name = "fakeredis" },
@@ -683,6 +696,7 @@ requires-dist = [
     { name = "django", specifier = ">=5.2.5" },
     { name = "django-celery-beat", specifier = ">=2.8.1" },
     { name = "django-celery-results", specifier = ">=2.6.0" },
+    { name = "django-materialized-view", specifier = ">=0.1.6.2" },
     { name = "djangorestframework", specifier = ">=3.16.1" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "fakeredis", specifier = ">=2.31.1" },

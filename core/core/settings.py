@@ -50,9 +50,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'django_materialized_view',
     'django_celery_beat',
     'django_celery_results',
     'rest_framework',
+
     'Tasker',
     'Stops',
     'Routes',

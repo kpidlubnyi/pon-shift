@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql="""
-                CREATE MATERIALIZED VIEW IF NOT EXISTS tasker_trip_stops AS
+                CREATE MATERIALIZED VIEW IF NOT EXISTS Tasker_trip_stops AS
                 (
                 SELECT
                     s.trip_id,
@@ -21,12 +21,12 @@ class Migration(migrations.Migration):
                 GROUP BY route_id, s.trip_id, t.direction_id
                 );
 
-                CREATE UNIQUE INDEX IF NOT EXISTS idx_tasker_trip_stops_trip_id
-                    ON tasker_trip_stops(trip_id);
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_Tasker_trip_stops_trip_id
+                    ON Tasker_trip_stops(trip_id);
 
-                CREATE INDEX IF NOT EXISTS idx_tasker_trip_stops_route_id
-                    ON tasker_trip_stops(route_id);
+                CREATE INDEX IF NOT EXISTS idx_Tasker_trip_stops_route_id
+                    ON Tasker_trip_stops(route_id);
             """,
-            reverse_sql="DROP MATERIALIZED VIEW IF EXISTS tasker_trip_stops;"
+            reverse_sql="DROP MATERIALIZED VIEW IF EXISTS Tasker_trip_stops;"
         )
     ]

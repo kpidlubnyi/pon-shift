@@ -135,3 +135,4 @@ def check_osm_update():
     if osm_is_new():
         logger.info('There is new OSM Map! Notifying services...')
         notify_about_new_map()
+        update_osm_hash_in_redis()

@@ -66,7 +66,7 @@ class TripDetailsSerializer(BaseTripSerializer, serializers.ModelSerializer):
 
     def get_stops(self, obj:Trip):
         stop_times_obj = StopTime.objects.filter(trip_id=obj.trip_id)
-        stops = [StopTimeBriefSerializer(stop).data for stop in stop_times_obj]
+        stops = [StopTimeSerializer(stop).data for stop in stop_times_obj]
         return stops
     
     class Meta(BaseTripSerializer.Meta):

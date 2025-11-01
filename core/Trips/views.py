@@ -5,3 +5,9 @@ from django.http import JsonResponse, HttpResponse
 from Tasker.models.common import *
 from .serializers import *
 from .services.views import *
+
+
+class TripInfo(APIView):
+    def get(self, request, trip_id):
+        trip = Trip.objects.get(trip_id=trip_id)
+        return TripDetailsSerializer(trip).data

@@ -153,32 +153,6 @@ def convert_gtfs_data_to_model_objects(carrier: str, model: models.Model, data_b
             
     return records
 
-def process_model_data(carrier: str, model: models.Model, model_data: list, batch_size: int = 200_000,):
-    """Processes model data in batches"""
-    total_rows = len(model_data)
-    logger.info(f"Start importing {total_rows} records for {model._meta.label}")
-    
-    imported_count = 0
-    
-    for i in range(0, total_rows, batch_size):
-        batch = model_data[i:i + batch_size]
-        
-        try:
-            records = convert_gtfs_data_to_model_objects(carrier, model, batch)
-            model.objects.bulk_create(records, batch_size=40_000)
-            imported_count += len(records)
-            logger.info(f'Imported logs: {imported_count}')
-            
-            del records
-            del batch
-            gc.collect()
-            
-        except Exception as e:
-            logger.error(f"Error during import of batch {i}-{i+len(batch)} for {model._meta.label}: {e}")
-            raise
-    
-    logger.info(f"Imported {imported_count} records for {model._meta.label}")
-    return imported_count
 
 def validate_carrier(options):
     name = options['carrier'][0]
@@ -349,7 +323,7 @@ def process_model_batch(carrier: str, model: models.Model, batch_data: List[dict
         logger.error(f"Error during batch processing for {model._meta.label}: {e}")
         raise
 
-def import_to_staging(zip_file: zipfile.ZipFile, carrier: str, batch_size: int = 200_000):
+def import_to_staging(zip_file: zipfile.ZipFile, carrier: str, batch_size: int = 500_000):
     importing_order = list(REQUIRED_MODELS.keys())
     deleted = delete_old_gtfs_data(carrier)
     
@@ -412,7 +386,7 @@ def download_and_process_gtfs(feed, carrier: str):
     
     try:
         with zipfile.ZipFile(gtfs_buffer) as zip_file:
-            import_to_staging(zip_file, carrier, batch_size=200_000)
+            import_to_staging(zip_file, carrier, batch_size=500_000)
     finally:
         gtfs_buffer.close()
         del gtfs_buffer

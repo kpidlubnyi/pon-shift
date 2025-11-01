@@ -66,8 +66,7 @@ class StopOnMapBriefSerializer(BaseStopSerializer, serializers.ModelSerializer):
         )
 
 
-class StopTimeSerializer(serializers.ModelSerializer):
-    stop = StopBriefSerializer()
+class BaseStopTimeSerializer(serializers.ModelSerializer):
     on_request = serializers.SerializerMethodField()
     
     def get_on_request(self, obj):
@@ -75,16 +74,18 @@ class StopTimeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StopTime
-        fields = ['stop', 'trip', 'arrival_time', 'on_request',]
+        fields = ('trip', 'arrival_time', 'on_request')
 
 
-class StopTimeBriefSerializer(StopTimeSerializer):
-    class Meta:
-        model = StopTime
-        fields = ['stop', 'on_request']
+class StopTimeSerializer(BaseStopTimeSerializer):
+    stop = BaseStopSerializer()
+    
+    class Meta(BaseStopTimeSerializer.Meta):
+        fields = BaseStopTimeSerializer.Meta.fields + (
+            'stop',
+        )
 
 
-class RecentTripStopTimeSerializer(StopTimeSerializer):
-    class Meta:
-        model = StopTime
-        fields = ['trip', 'arrival_time', 'on_request']
+class RecentTripStopTimeSerializer(BaseStopTimeSerializer):
+    class Meta(BaseStopTimeSerializer.Meta):
+        pass

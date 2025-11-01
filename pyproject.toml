@@ -9,6 +9,7 @@ dependencies = [
     "django>=5.2.5",
     "django-celery-beat>=2.8.1",
     "django-celery-results>=2.6.0",
+    "django-materialized-view>=0.1.6.2",
     "djangorestframework>=3.16.1",
     "dotenv>=0.9.9",
     "fakeredis>=2.31.1",
