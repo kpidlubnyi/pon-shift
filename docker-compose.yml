@@ -103,6 +103,7 @@ services:
       context: .
       dockerfile: ./core/Dockerfile
     container_name: celery-worker-default
+    entrypoint: []
     command: celery -A core worker -Q default --loglevel=info --concurrency=4 -n default@%h
     volumes:
       - ./core:/app
@@ -133,6 +134,7 @@ services:
       context: .
       dockerfile: ./core/Dockerfile
     container_name: celery-worker-gtfs
+    entrypoint: []
     command: celery -A core worker -Q gtfs_updates --loglevel=info --concurrency=1 -n gtfs@%h
     volumes:
       - ./core:/app
@@ -163,6 +165,7 @@ services:
       context: .
       dockerfile: ./core/Dockerfile
     container_name: celery-beat
+    entrypoint: []
     command: celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - ./core:/app

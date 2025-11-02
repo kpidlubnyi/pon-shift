@@ -28,8 +28,6 @@ class CarrierSerializer(serializers.ModelSerializer):
 
 
 class BaseStopSerializer(serializers.ModelSerializer):
-    carrier = serializers.SerializerMethodField()
-
     def to_representation(self, instance):
         p_station = instance.parent_station
         
@@ -37,9 +35,6 @@ class BaseStopSerializer(serializers.ModelSerializer):
             instance = Stop.objects.get(stop_id=p_station)
 
         return super().to_representation(instance)
-        
-    def get_carrier(self, obj):
-        return CarrierSerializer(obj.carrier).data
     
     class Meta:
         model = Stop
@@ -51,6 +46,11 @@ class BaseStopSerializer(serializers.ModelSerializer):
     
 
 class StopBriefSerializer(BaseStopSerializer, serializers.ModelSerializer):
+    carrier = serializers.SerializerMethodField()
+
+    def get_carrier(self, obj):
+        return CarrierSerializer(obj.carrier).data
+    
     class Meta(BaseStopSerializer.Meta):
         fields = BaseStopSerializer.Meta.fields + (
             'stop_id',
