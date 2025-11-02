@@ -3,27 +3,27 @@ from .abstract import *
 
 class Carrier(AbstractCarrier):
     class Meta:
-        db_table = 'Tasker_Carriers'
+        db_table = 'common_Carriers'
 
 class CalendarDate(AbstractCalendarDate):
     carrier = models.ForeignKey(Carrier, on_delete=models.CASCADE)
 
     class Meta:
-        db_table ='Tasker_CalendarDates'
+        db_table ='common_CalendarDates'
 
 
 class Route(AbstractRoute):
     carrier = models.ForeignKey(Carrier, on_delete=models.CASCADE)
 
     class Meta:
-        db_table = 'Tasker_Routes'
+        db_table = 'common_Routes'
 
 
 class Shape(AbstractShape):
     carrier = models.ForeignKey(Carrier, on_delete=models.CASCADE)
 
     class Meta:
-        db_table = 'Tasker_Shapes'
+        db_table = 'common_Shapes'
     
 
 class ShapeSequence(AbstractShapeSequence):
@@ -31,14 +31,14 @@ class ShapeSequence(AbstractShapeSequence):
     shape = models.ForeignKey(Shape, on_delete=models.CASCADE)
 
     class Meta:
-        db_table = 'Tasker_ShapeSequences'
+        db_table = 'common_ShapeSequences'
 
 
 class Stop(AbstractStop):
     carrier = models.ForeignKey(Carrier, on_delete=models.CASCADE)
 
     class Meta:
-        db_table = 'Tasker_Stops'
+        db_table = 'common_Stops'
 
 
 class Trip (AbstractTrip):
@@ -47,7 +47,7 @@ class Trip (AbstractTrip):
     shape = models.ForeignKey(Shape, on_delete=models.CASCADE)
 
     class Meta:
-        db_table = 'Tasker_Trips'
+        db_table = 'common_Trips'
         unique_together = [['trip_id', 'route']]
 
 
@@ -57,7 +57,7 @@ class StopTime(AbstractStopTime):
     stop = models.ForeignKey(Stop, on_delete=models.CASCADE)
 
     class Meta:
-        db_table = 'Tasker_StopTimes'
+        db_table = 'common_StopTimes'
         unique_together = [['trip', 'stop_sequence']]
 
 
@@ -66,7 +66,7 @@ class Frequence(AbstractFrequence):
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
 
     class Meta:
-        db_table = 'Tasker_Frequencies'
+        db_table = 'common_Frequencies'
 
 
 class Transfer(AbstractTransfer):        
@@ -77,4 +77,4 @@ class Transfer(AbstractTransfer):
     to_trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='transfers_to')
 
     class Meta:
-        db_table = 'Tasker_Transfers'
+        db_table = 'common_Transfers'

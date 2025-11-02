@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class TaskerConfig(AppConfig):
+class CommonConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'Tasker'
+    name = 'common'

@@ -12,9 +12,9 @@ from django.conf import settings
 from django.core.management import CommandError
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
-from ...models.staging import *
-from ..redis import *
-
+from common.models.staging import *
+from common.services.redis import *
+from Trips.models import TripStops
 
 logger = logging.getLogger(__name__)
 
@@ -435,3 +435,44 @@ def backup_from_regular_tables():
                             
                             cursor.execute(f"SELECT setval('{sequence_name}', {max_id+1});")
                             cursor.execute(f"SELECT setval('{sequence_name_staging}', {max_id+1});")
+
+
+def toggle_carrier_fk(enable=True):
+    with connection.cursor() as cursor:
+        if not enable:
+            cursor.execute('ALTER TABLE "common_TripStops" DROP CONSTRAINT IF EXISTS "common_TripStops_carrier_id_fkey";')
+        else:
+            cursor.execute('''
+                ALTER TABLE "common_TripStops"
+                ADD CONSTRAINT "common_TripStops_carrier_id_fkey"
+                FOREIGN KEY (carrier_id) REFERENCES "common_Carriers"(id)
+                ON DELETE CASCADE;
+            ''')
+
+
+def refresh_trip_stops(carrier_code):
+    logger.info("Running TripStops materialized view refresher...")
+    carrier_id = Carrier.objects.get(carrier_code=carrier_code).pk
+
+    toggle_carrier_fk(enable=False)
+    with transaction.atomic():
+        deleted, _ = TripStops.objects.filter(carrier__id=carrier_id).delete()
+        logger.info(f'Deleted {deleted} rows of old data for {carrier_code} in TripStops table.')
+        query, params = TripStops._get_definition(**{'t.carrier_id':carrier_id})
+        
+        insertion_query = f"""
+            INSERT INTO "common_TripStops" (
+                trip_id,
+                direction_id,
+                route_id,
+                stop_ids,
+                carrier_id
+            )
+            {query};
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(insertion_query, params)
+        
+    toggle_carrier_fk(enable=True)
+    logger.info(f"Data for {carrier_code} carrier in TripStops table was successfully updated!")

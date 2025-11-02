@@ -2,10 +2,11 @@ from rest_framework import serializers
 from django.db.models import Count, Q, QuerySet, Min, Max
 from django.utils import timezone as tz
 
-from Tasker.models import *
+from common.models.common import *
+from common.services.common import *
 from Stops.serializers import *
 from Trips.serializers import *
-from Stops.services.common import *
+
 
 
 class BaseRouteSerializer(serializers.ModelSerializer):
@@ -27,7 +28,7 @@ class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
         routes = {}
 
         for drctn in {0, 1}:
-            routes_qs = TripStopsMV.objects.filter(route_id=obj.route_id, direction_id=drctn)
+            routes_qs = TripStops.objects.filter(route_id=obj.route_id, direction_id=drctn)
             
             main_route_qs = (routes_qs
                 .annotate(count_of_uses=Count('trip_id'))
@@ -39,8 +40,8 @@ class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
                 .distinct('stop_ids')
                 .exclude(stop_ids=main_route_qs.stop_ids)
             ) 
-            main_route = TripStopsMVSerializer(main_route_qs).data
-            other_routes = TripStopsMVSerializer(other_routes_qs, many=True).data
+            main_route = TripStopsSerializer(main_route_qs).data
+            other_routes = TripStopsSerializer(other_routes_qs, many=True).data
             
             
             main_route_stops = set()

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from Tasker.models.common import *
+from common.models.common import *
 
 
 class NearestStopsQueryParamsSerializer(serializers.Serializer):

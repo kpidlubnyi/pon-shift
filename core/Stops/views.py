@@ -4,7 +4,7 @@ from rest_framework.serializers import ValidationError
 from rest_framework import status
 from django.http import JsonResponse
 
-from Tasker.models.common import *
+from common.models.common import *
 from .services.views import *
 from .serializers import *
 

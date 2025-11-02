@@ -4,9 +4,9 @@ import logging
 
 from django.conf import settings
 
-from .services.tasks import *
-from .services.redis import *
-from .services.mongo import *
+from .services import *
+from common.services.mongo import *
+from common.services.redis import *
 
 
 logger = logging.getLogger(__name__)
@@ -24,18 +24,6 @@ def on_worker_ready(sender, **kwargs):
         check_osm_update.apply_async()
         logger.info('Initial OSM check scheduled!')
 
-
-@shared_task(queue='gtfs_updates')
-def refresh_trip_stops_mv():
-    logger.info("Running TripStops materialized view refresher...")
-    
-    connection.close()
-    
-    with transaction.atomic():
-        with connection.cursor() as cursor:
-            cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY tasker_trip_stops;")
-    
-    logger.info("TripStops materialized view was refreshed successfully!")
 
 @shared_task
 def check_gtfs_updates():
@@ -58,9 +46,6 @@ def check_gtfs_updates():
         else:
             logger.info(f'GTFS for {carrier} carrier has not been updated since the last check.')
             continue
-
-    if was_any_updated:
-        refresh_trip_stops_mv.apply_async()
             
 
 @shared_task(queue = 'gtfs_updates')
@@ -71,7 +56,9 @@ def update_gtfs(feed, carrier: str):
         download_and_process_gtfs(feed, carrier)
         logger.info("Import complete! Table rearrangement...")
         swap_tables()
-        logger.info('The rearrangement is successful!')
+        logger.info('The rearrangement is successful! Updating data in TripStops table...')
+        refresh_trip_stops(carrier)
+        logger.info('Successfully updated! Running backup for staging tables...')
         update_sha_in_redis(feed, carrier)
     except Exception as e:
         logger.error(f'Error during import to test tables: {e}')

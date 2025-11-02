@@ -66,14 +66,14 @@ def print_task_status(command: BaseCommand, status: TaskCreationStatus, text: st
 
 def create_gtfs_periodic_task(carrier: str, schedule: CrontabSchedule):
     task_name = f'GTFS_UPDATING_{carrier}'
-    task_path = 'Tasker.tasks.update_gtfs'
+    task_path = 'tasks.tasks.update_gtfs'
 
     status, text = create_periodic_task(schedule, task_name, task_path)
     return status, text
 
 def create_gtfs_rt_periodic_task(feed_name: str, schedule: CrontabSchedule):
     task_name = f'GTFS_UPDATING_{feed_name}_RT'
-    task_path = 'Tasker.tasks.update_gtfs_realtime'
+    task_path = 'tasks.tasks.update_gtfs_realtime'
 
     status, text = create_periodic_task(schedule, task_name, task_path, feed_name)
     return status, text

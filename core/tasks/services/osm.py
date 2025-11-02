@@ -2,7 +2,7 @@ import requests
 
 from django.conf import settings
 
-from ..redis import *
+from common.services.redis import *
 
 def fetch_recent_osm_hash():
     url = settings.OSM_META_URL

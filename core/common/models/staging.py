@@ -1,14 +1,13 @@
 from django.db import models
 
 from .common import *
-from .abstract import *
 
 
 class CarrierStaging(AbstractCarrier):
     _base_model = Carrier
 
     class Meta:
-        db_table = 'Tasker_Carriers_Staging'
+        db_table = 'common_Carriers_Staging'
 
 
 class CalendarDateStaging(AbstractCalendarDate):
@@ -17,7 +16,7 @@ class CalendarDateStaging(AbstractCalendarDate):
     _base_model = CalendarDate
 
     class Meta:
-        db_table ='Tasker_CalendarDates_Staging'
+        db_table ='common_CalendarDates_Staging'
 
 
 class RouteStaging(AbstractRoute):
@@ -26,7 +25,7 @@ class RouteStaging(AbstractRoute):
     _base_model = Route
 
     class Meta:
-        db_table = 'Tasker_Routes_Staging'
+        db_table = 'common_Routes_Staging'
 
 
 class ShapeStaging(AbstractShape):
@@ -35,7 +34,7 @@ class ShapeStaging(AbstractShape):
     _base_model = Shape
 
     class Meta:
-        db_table = 'Tasker_Shapes_Staging'
+        db_table = 'common_Shapes_Staging'
     
 
 class ShapeSequenceStaging(AbstractShapeSequence):
@@ -45,7 +44,7 @@ class ShapeSequenceStaging(AbstractShapeSequence):
     _base_model = ShapeSequence
 
     class Meta:
-        db_table = 'Tasker_ShapeSequences_Staging'
+        db_table = 'common_ShapeSequences_Staging'
 
 
 class StopStaging(AbstractStop):
@@ -54,7 +53,7 @@ class StopStaging(AbstractStop):
     _base_model = Stop
 
     class Meta:
-        db_table = 'Tasker_Stops_Staging'
+        db_table = 'common_Stops_Staging'
 
 class TripStaging(AbstractTrip):
     carrier = models.ForeignKey(CarrierStaging, on_delete=models.CASCADE)
@@ -64,7 +63,7 @@ class TripStaging(AbstractTrip):
     _base_model = Trip
 
     class Meta:
-        db_table = 'Tasker_Trips_Staging'
+        db_table = 'common_Trips_Staging'
         unique_together = [['trip_id', 'route']]
 
 
@@ -76,7 +75,7 @@ class StopTimeStaging(AbstractStopTime):
     _base_model = StopTime
 
     class Meta:
-        db_table = 'Tasker_StopTimes_Staging'
+        db_table = 'common_StopTimes_Staging'
         unique_together = [['trip', 'stop_sequence']]
 
 class FrequenceStaging(AbstractFrequence):
@@ -86,7 +85,7 @@ class FrequenceStaging(AbstractFrequence):
     _base_model = Frequence
 
     class Meta:
-        db_table = 'Tasker_Frequencies_Staging'
+        db_table = 'common_Frequencies_Staging'
 
 class TransferStaging(AbstractTransfer):
     carrier = models.ForeignKey(CarrierStaging, on_delete=models.CASCADE)
@@ -98,4 +97,4 @@ class TransferStaging(AbstractTransfer):
     _base_model = Transfer
     
     class Meta:
-        db_table = 'Tasker_Transfers_Staging'
+        db_table = 'common_Transfers_Staging'

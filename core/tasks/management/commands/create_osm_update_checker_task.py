@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
-from ...services.tasks.commands import *
-from ...services.tasks.gtfs import validate_cron
+from ...services.commands import *
+from ...services.gtfs import validate_cron
 
 
 class Command(BaseCommand):
@@ -15,7 +15,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         schedule = validate_cron(options)
         task_name = "OSM_UPDATE_CHECKER"
-        task_path = 'Tasker.tasks.check_osm_update'
+        task_path = 'tasks.tasks.check_osm_update'
         
         status, text = create_periodic_task(schedule, task_name, task_path)
         print_task_status(self, status, text)

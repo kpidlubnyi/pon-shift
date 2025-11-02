@@ -50,12 +50,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'django_materialized_view',
     'django_celery_beat',
     'django_celery_results',
     'rest_framework',
 
-    'Tasker',
+    'common',
+    'tasks',
     'Stops',
     'Routes',
     'Bikes',
@@ -187,17 +187,17 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-        'Tasker': {
+        'tasks': {
             'handlers': ['console', 'file_celery'],
             'level': 'INFO',
             'propagate': False,
         },
-        'Tasker.services.tasks.gtfs': {
+        'tasks.services.gtfs': {
             'handlers': ['file_celery'],
             'level': 'INFO',
             'propagate': False,
         },
-        'Tasker.services.tasks.bikes': {
+        'tasks.services.bikes': {
             'handlers': ['file_celery'],
             'level': 'INFO',
             'propagate': False,

@@ -4,9 +4,8 @@ from rest_framework import serializers
 
 from .services.views import *
 from Stops.serializers import *
-from Tasker.models.common import *
-from Tasker.models.sql_views import *
-from Tasker.services.mongo import *
+from common.models.common import *
+from common.services.mongo import *
 
 
 class BaseTripSerializer(serializers.ModelSerializer):
@@ -34,7 +33,7 @@ class BaseTripSerializer(serializers.ModelSerializer):
             'has_realtime'
         )
 
-class TripStopsMVSerializer(serializers.ModelSerializer):
+class TripStopsSerializer(serializers.ModelSerializer):
     stops = serializers.SerializerMethodField()
     polyline = serializers.SerializerMethodField()
 
@@ -42,13 +41,13 @@ class TripStopsMVSerializer(serializers.ModelSerializer):
         stops = get_stops_for_trip_stops_mv(obj)
         return StopOnMapBriefSerializer(stops, many=True).data
 
-    def get_polyline(self, obj:TripStopsMV):
+    def get_polyline(self, obj:TripStops):
         stops = get_stops_for_trip_stops_mv(obj)
         coords = [(s.stop_lat, s.stop_lon) for s in stops]
         return polyline.encode(coords)
          
     class Meta:
-        model = TripStopsMV
+        model = TripStops
         fields = [
             'trip_id',
             'polyline',

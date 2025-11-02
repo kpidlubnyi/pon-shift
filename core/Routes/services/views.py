@@ -6,7 +6,7 @@ import requests
 from django.conf import settings
 
 from .views import *
-from Tasker.models import *
+from common.models import *
 from ..serializers import *
 
 
