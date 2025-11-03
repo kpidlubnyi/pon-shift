@@ -8,7 +8,7 @@ services:
       - ./core:/app
       - static_volume:/app/static
       - logs_volume:/app/logs
-      - shared_flags:/app/flags
+      - ./shared_flags:/app/flags
     ports:
       - "8001:8000"
     networks:
@@ -108,6 +108,7 @@ services:
     volumes:
       - ./core:/app
       - logs_volume:/app/logs
+      - ./shared_flags:/app/flags
     depends_on:
       core:
         condition: service_healthy
@@ -190,7 +191,7 @@ services:
       context: ./ors
     container_name: ors
     volumes:
-      - shared_flags:/ors/flags
+      - ./shared_flags:/ors/flags
     ports:
       - 8082:8082
     networks:
@@ -210,7 +211,7 @@ services:
       context: ./otp
     container_name: otp
     volumes:
-      - shared_flags:/otp/flags
+      - ./shared_flags:/otp/flags
     environment:
       - JAVA_OPTS=-Xmx5G -Xms3G
     networks:
@@ -235,8 +236,6 @@ volumes:
   static_volume:
     driver: local
   logs_volume:
-    driver: local
-  shared_flags:
     driver: local
 
 networks:

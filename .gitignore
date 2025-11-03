@@ -20,3 +20,5 @@ htmlcov/
 # Other
 todo.txt
 analisys.ipynb
+shared_flags/*
+!shared_flags/.gitkeep

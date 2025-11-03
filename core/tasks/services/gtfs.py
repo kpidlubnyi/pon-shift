@@ -70,10 +70,6 @@ def create_flag_file(service: str, about: str):
 
 def notify_about_new_gtfs():
     """Notify OTP watchdog about new GTFS data, unless it's the first import."""
-    if CarrierStaging.objects.count() == 0:
-        logger.info("It's the first GTFS import, skipping OTP graph rebuild.")
-        return
-
     create_flag_file('otp', 'gtfs')
 
 
