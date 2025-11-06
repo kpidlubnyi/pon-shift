@@ -16,6 +16,8 @@ ORS_PORT = getenv('ORS_PORT')
 OSM_META_URL = getenv('OSM_META_URL')
 
 OTP_PATH = getenv('OTP_PATH')
+OTP_HOST = getenv('OTP_HOST')
+OTP_PORT = getenv('OTP_PORT')
 
 NEXTBIKE_API_URL = getenv('NEXTBIKE_API_URL')
 

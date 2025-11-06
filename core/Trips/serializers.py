@@ -1,11 +1,40 @@
 import polyline
 
+from django.utils import timezone as tz
 from rest_framework import serializers
 
 from .services.views import *
 from Stops.serializers import *
 from common.models.common import *
 from common.services.mongo import *
+
+# TODO: add Warsaw bound coordinates to from/to params
+class SearchedTripsSerializer(serializers.Serializer):
+    from_lat = serializers.FloatField(
+        required = True
+    )
+    
+    from_lon = serializers.FloatField(
+        required = True
+    )
+
+    to_lat = serializers.FloatField(
+        required = True
+    )
+    
+    to_lon = serializers.FloatField(
+        required = True
+    )
+ 
+    datetime = serializers.DateTimeField(
+        default = tz.localtime()
+    )
+
+    limit = serializers.IntegerField(
+        min_value = 1,
+        max_value = 100,
+        default = 16
+    )
 
 
 class BaseTripSerializer(serializers.ModelSerializer):

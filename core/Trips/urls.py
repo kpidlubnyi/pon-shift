@@ -4,5 +4,7 @@ from .views import *
 
 
 urlpatterns = [
-    path('<str:trip_id>/', TripInfo.as_view()),
+    path('search-trip/', SearchedTrips.as_view()),
+    path('<str:trip_id>/', TripInfo.as_view())
+
 ]
