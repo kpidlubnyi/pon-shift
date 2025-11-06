@@ -42,9 +42,20 @@ class TripStopsSerializer(serializers.ModelSerializer):
         return StopOnMapBriefSerializer(stops, many=True).data
 
     def get_polyline(self, obj:TripStops):
-        stops = get_stops_for_trip_stops_mv(obj)
-        coords = [(s.stop_lat, s.stop_lon) for s in stops]
-        return polyline.encode(coords)
+        trip = Trip.objects.get(trip_id=obj.trip_id)
+        carrier_id = trip.carrier.pk
+        shape_id = trip.shape.shape_id
+        
+        shape_sequence_objs = (
+            ShapeSequence.objects
+                .filter(
+                    shape_id=shape_id,
+                    carrier_id=carrier_id
+                )
+        )
+        
+        shape_sequence = [(s_obj.shape_pt_lat, s_obj.shape_pt_lon) for s_obj in shape_sequence_objs]
+        return polyline.encode(shape_sequence)
          
     class Meta:
         model = TripStops
