@@ -3,7 +3,9 @@ import polyline
 from django.utils import timezone as tz
 from rest_framework import serializers
 
-from .services.views import *
+from .serializers import *
+from Trips.services.models import *
+from .models import *
 from Stops.serializers import *
 from common.models.common import *
 from common.services.mongo import *
@@ -67,7 +69,7 @@ class TripStopsSerializer(serializers.ModelSerializer):
     polyline = serializers.SerializerMethodField()
 
     def get_stops(self, obj):
-        stops = get_stops_for_trip_stops_mv(obj)
+        stops = get_stops_for_trip_stops(obj)
         return StopOnMapBriefSerializer(stops, many=True).data
 
     def get_polyline(self, obj:TripStops):

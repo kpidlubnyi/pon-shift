@@ -2,9 +2,10 @@ from rest_framework import serializers
 from django.db.models import Count, Q, QuerySet, Min, Max
 from django.utils import timezone as tz
 
-from common.models.common import *
+from common.models import *
 from common.services.common import *
 from Stops.serializers import *
+from Trips.models import *
 from Trips.serializers import *
 
 

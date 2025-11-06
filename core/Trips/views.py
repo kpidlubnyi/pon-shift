@@ -26,7 +26,7 @@ class SearchedTrips(APIView):
 
         
         service = OTPService()
-        trips = service.get_trips(**{
+        response = service.get_trips(**{
             "fromLocation": {
                 "coordinates": {
                     "latitude": params['from_lat'],
@@ -42,4 +42,7 @@ class SearchedTrips(APIView):
             "dateTime": params['datetime'],
             "numTripPatterns": params['limit']
         })
-        return JsonResponse({'trips': trips})
+
+        trip = response['trip']
+        trip['tripPatterns'] = [process_trip_pattern(t_pattern) for t_pattern in trip['tripPatterns']]
+        return JsonResponse(trip, status=status.HTTP_200_OK)

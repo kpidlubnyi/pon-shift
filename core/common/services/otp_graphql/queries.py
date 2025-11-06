@@ -55,6 +55,9 @@ class OTPGraphQLQueries(StrEnum):
                     duration
                     distance
                     legs {
+                        serviceJourney {
+                            id    
+                        }
                         mode
                         aimedStartTime
                         expectedStartTime
@@ -64,19 +67,14 @@ class OTPGraphQLQueries(StrEnum):
                         distance
                         duration
                         fromPlace {
-                            name
                             quay {
                                 ... quayDetails
                             }
                         }
                         toPlace {
-                            name
                             quay {
                                 ... quayDetails
                             }
-                        }
-                        line {
-                            id
                         }
                         authority {
                             id
@@ -100,9 +98,10 @@ class OTPGraphQLQueries(StrEnum):
         }
 
         fragment quayDetails on Quay {
-        name
-        latitude
-        longitude
-        wheelchairAccessible
+            id
+            name
+            latitude
+            longitude
+            wheelchairAccessible
         }
 """
