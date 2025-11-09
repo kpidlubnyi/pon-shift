@@ -56,7 +56,20 @@ def process_trip_pattern(trip_response: dict):
     trip_response['legs'] = [process_leg(leg) for leg in trip_response['legs']]
     return trip_response
 
-
+def build_via_variable(via_str: str | None) -> list | None:
+    if not via_str:
+        return
     
-        
-
+    via = list()
+    for visit_point in via_str.split(';'):
+        lat, lon, duration = visit_point.split(',')
+        visit_json = {
+            "visit": {
+                "minimumWaitTime": duration,
+                "coordinate": {
+                   "latitude": float(lat),
+                    "longitude": float(lon)
+                }}}
+        via.append(visit_json)
+    
+    return via

@@ -23,10 +23,7 @@ class SearchedTrips(APIView):
         if not params.is_valid():
             raise ValidationError(params.errors)
         params = params.data
-
-        
-        service = OTPService()
-        response = service.get_trips(**{
+        variables = {
             "fromLocation": {
                 "coordinates": {
                     "latitude": params['from_lat'],
@@ -40,8 +37,12 @@ class SearchedTrips(APIView):
                 }
             },
             "dateTime": params['datetime'],
-            "numTripPatterns": params['limit']
-        })
+            "numTripPatterns": params['limit'],
+            "via": build_via_variable(params.get('via'))
+        }            
+        
+        service = OTPService()
+        response = service.get_trips(**variables)
 
         trip = response['trip']
         trip['tripPatterns'] = [process_trip_pattern(t_pattern) for t_pattern in trip['tripPatterns']]

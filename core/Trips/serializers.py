@@ -1,4 +1,5 @@
 import polyline
+import re
 
 from django.utils import timezone as tz
 from rest_framework import serializers
@@ -37,6 +38,40 @@ class SearchedTripsSerializer(serializers.Serializer):
         max_value = 100,
         default = 16
     )
+
+    via = serializers.CharField(
+        required = False
+    )
+
+    def validate_via(self, value:str):
+        def validate_cooordinate(coord:str) -> None:
+            pattern = r'\d{1,2}.\d{1,12}'
+
+            if not re.match(pattern, coord):
+                raise serializers.ValidationError('Incorrect coordinate!')
+        
+        def validate_minimum_wait_time(val:str) -> None:
+            pattern = r'^(\d+[smhd])+$|^P(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$'
+            
+            if not re.match(pattern, val, re.IGNORECASE):
+                raise serializers.ValidationError(
+                    "Incorrent duration! Examples of correct ones: 10m, 1h, PT10M"
+                )
+        
+        visit_points = [visit.split(',') for visit in value.split(';')]
+        
+        for visit_point in visit_points:
+            if len(visit_point) != 3:
+                raise serializers.ValidationError(
+                    """
+                    Every via visit point should have 3 values: 
+                    lat, lon and duration of being there!
+                    """)
+            validate_cooordinate(visit_point[0])
+            validate_cooordinate(visit_point[1])
+            validate_minimum_wait_time(visit_point[2])
+
+        return value
 
 
 class BaseTripSerializer(serializers.ModelSerializer):
