@@ -28,8 +28,9 @@ def process_trip_pattern(trip_response: dict):
         def replace_service_journey_with_trip():
             nonlocal leg
             if not leg['serviceJourney']:
+                del leg['serviceJourney']
                 return
-            trip_id = leg['serviceJourney']['id'].split(':')[1]
+            trip_id: str = leg['serviceJourney']['id'].replace(':', '-', 1)
             trip = Trip.objects.get(trip_id=trip_id)
             trip = TripBriefSerializer(trip).data
             leg['trip'] = trip
@@ -37,6 +38,7 @@ def process_trip_pattern(trip_response: dict):
 
         def replace_authority_with_carrier():
             if not leg['authority']:
+                del leg['authority']
                 return
             carrier_code = leg['authority']['id'].split(':')[0]
             carrier = Carrier.objects.get(carrier_code=carrier_code)

@@ -57,8 +57,6 @@ def update_gtfs(feed, carrier: str):
         logger.info("Import complete! Table rearrangement...")
         swap_tables()
         logger.info('The rearrangement is successful! Updating data in TripStops table...')
-        refresh_trip_stops(carrier)
-        logger.info('Successfully updated! Running backup for staging tables...')
         update_sha_in_redis(feed, carrier)
     except Exception as e:
         logger.error(f'Error during import to test tables: {e}')

@@ -8,13 +8,14 @@ import os
 from typing import List, Generator
 
 from django.db import transaction, close_old_connections, reset_queries, connection
+from django.db.models import Q
 from django.conf import settings
 from django.core.management import CommandError
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
 from common.models.staging import *
 from common.services.redis import *
-from Trips.models import TripStops
+from Trips.models import *
 
 logger = logging.getLogger(__name__)
 
@@ -388,6 +389,8 @@ def download_and_process_gtfs(feed, carrier: str):
         del gtfs_buffer
         gc.collect()
 
+    refresh_trip_stops(carrier)
+
 def get_table_name(model: models.Model):
     return model._meta.db_table
 
@@ -396,7 +399,7 @@ def swap_tables():
         return f'ALTER TABLE "{old}" RENAME TO "{new}";'
     
     with transaction.atomic():
-        for model_staging in list(REQUIRED_MODELS.values()) + [ShapeStaging]:
+        for model_staging in list(REQUIRED_MODELS.values()) + [ShapeStaging, TripStopsStaging]:
             model_name = get_table_name(model_staging._base_model)
             model_name_staging = get_table_name(model_staging)
             model_name_old = model_name + '_OLD'
@@ -408,7 +411,7 @@ def swap_tables():
 
 def backup_from_regular_tables():
     CarrierStaging.objects.all().delete()
-    models_staging = list(REQUIRED_MODELS.values())
+    models_staging = list(REQUIRED_MODELS.values()) + [TripStopsStaging]
     models_staging.insert(1, ShapeStaging)
     
     with transaction.atomic():
@@ -436,28 +439,26 @@ def backup_from_regular_tables():
 def toggle_carrier_fk(enable=True):
     with connection.cursor() as cursor:
         if not enable:
-            cursor.execute('ALTER TABLE "common_TripStops" DROP CONSTRAINT IF EXISTS "common_TripStops_carrier_id_fkey";')
+            cursor.execute('ALTER TABLE "trips_TripStops_Staging" DROP CONSTRAINT IF EXISTS "trips_TripStops_Staging_carrier_id_fkey";')
         else:
             cursor.execute('''
-                ALTER TABLE "common_TripStops"
-                ADD CONSTRAINT "common_TripStops_carrier_id_fkey"
-                FOREIGN KEY (carrier_id) REFERENCES "common_Carriers"(id)
+                ALTER TABLE "trips_TripStops_Staging"
+                ADD CONSTRAINT "trips_TripStops_Staging_carrier_id_fkey"
+                FOREIGN KEY (carrier_id) REFERENCES "common_Carriers_Staging"(id)
                 ON DELETE CASCADE;
             ''')
 
 
 def refresh_trip_stops(carrier_code):
     logger.info("Running TripStops materialized view refresher...")
-    carrier_id = Carrier.objects.get(carrier_code=carrier_code).pk
-
+    carrier = CarrierStaging.objects.get(carrier_code=carrier_code)
+    
     toggle_carrier_fk(enable=False)
     with transaction.atomic():
-        deleted, _ = TripStops.objects.filter(carrier__id=carrier_id).delete()
-        logger.info(f'Deleted {deleted} rows of old data for {carrier_code} in TripStops table.')
-        query, params = TripStops._get_definition(**{'t.carrier_id':carrier_id})
+        query, params = TripStopsStaging._get_definition(**{'t.carrier_id':carrier.pk})
         
         insertion_query = f"""
-            INSERT INTO "common_TripStops" (
+            INSERT INTO "trips_TripStops_Staging" (
                 trip_id,
                 direction_id,
                 route_id,
