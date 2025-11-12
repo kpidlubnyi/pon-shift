@@ -27,7 +27,20 @@ restart_ors_server(){
 }
 
 
-ors_echo "Wathdog started!"
+ors_echo "Watchdog started!"
+ors_echo "Initial run..."
+
+if [ ! -d "./graphs_ready" ] || [ ! "$(ls -A ./graphs_ready)" ]; then
+    ors_echo "No graphs to run, rebuilding..."
+    download_new_map
+    build_new_graphs
+    restart_ors_server
+    sleep 1
+else
+    ors_echo
+    restart_ors_server
+    sleep 1
+fi    
 
 while true; do
     if [ -f "$ORS_NEW_MAP_FLAG" ]; then

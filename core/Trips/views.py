@@ -38,7 +38,8 @@ class SearchedTrips(APIView):
             },
             "dateTime": params['datetime'],
             "numTripPatterns": params['limit'],
-            "via": build_via_variable(params.get('via'))
+            "via": build_via_variable(params.get('via')),
+            # get_transit_mode(params['vehicle_types'])
         }            
         
         service = OTPService()

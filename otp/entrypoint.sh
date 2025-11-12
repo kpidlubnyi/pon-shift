@@ -18,6 +18,7 @@ otp_echo(){
 
 build_street_graph() {
     java $JAVA_OPTS -jar otp-shaded-2.8.1.jar --buildStreet .
+    cp ./streetGraph.obj ./graphs/streetGraph.obj
     otp_echo "Street graph rebuild complete. Recreating transit graph..."
     touch "$NEW_GTFS_FLAG"
     rm -f "$NEW_MAP_FLAG"
@@ -25,6 +26,7 @@ build_street_graph() {
 
 build_transit_graph() {
     java $JAVA_OPTS -jar otp-shaded-2.8.1.jar --loadStreet --save .
+    cp ./graph.obj ./graphs/graph.obj
     otp_echo "Transit graph rebuild complete. Creating readiness flag..."
     touch "$GRAPH_READY_FLAG"
     rm -f "$NEW_GTFS_FLAG"
@@ -66,8 +68,30 @@ serve_transit_graph() {
     otp_echo "OTP Server started with PID: $OTP_PID"
 }
 
-trap 'echo "Shutting down..."; [ -n "$OTP_PID" ] && kill $OTP_PID 2>/dev/null; exit 0' TERM INT
+initial_run() {
+    if [ -f ./graphs/graph.obj ]; then
+        otp_echo "Found transit graph! Serving..."
+        cp ./graphs/graph.obj ./graph.obj
+        serve_transit_graph
+        return
+    fi
 
+    otp_echo "No transit graphs from the previous running! Looking for street graph..."
+
+    if [ -f ./graphs/streetGraph.obj ]; then
+        otp_echo "Found street graph! Building transit graph..."
+        cp ./graphs/streetGraph.obj ./streetGraph.obj
+        with_rebuilding build_transit_graph
+    fi
+
+    otp_echo "No street graphs from the previous running! Starting flag-files checking..."
+}
+
+
+
+otp_echo "Watchdog started!"
+trap 'echo "Shutting down..."; [ -n "$OTP_PID" ] && kill $OTP_PID 2>/dev/null; exit 0' TERM INT
+initial_run
 
 while true; do
     if [ -n "$OTP_PID" ] && ! kill -0 "$OTP_PID" 2>/dev/null; then
