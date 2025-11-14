@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from ...services.commands import *
-from ...services.gtfs import validate_cron
+from ...services.gtfs.tasks import validate_cron
 
 
 class Command(BaseCommand):
