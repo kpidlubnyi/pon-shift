@@ -56,6 +56,12 @@ def process_trip_pattern(trip_response: dict):
     trip_response['legs'] = [process_leg(leg) for leg in trip_response['legs']]
     return trip_response
 
+
+def build_location_variable(param: str):
+    lat, lon = map(float, param.split(','))
+    return {"coordinates": {"latitude": lat, "longitude": lon}}
+ 
+ 
 def build_via_variable(via_str: str | None) -> list | None:
     if not via_str:
         return

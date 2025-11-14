@@ -11,6 +11,14 @@ ors:
         elevation: true
         encoder_options:
           block_fords: false
+      bike-regular:
+        enabled: true
+        profile: cycling-regular
+        encoder_options:
+          consider_elevation: true
+          turn_costs: true
+          block_fords: false
+        elevation: true
 
 logging:
   level:

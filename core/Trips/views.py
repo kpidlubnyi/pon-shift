@@ -22,23 +22,22 @@ class SearchedTrips(APIView):
             
         if not params.is_valid():
             raise ValidationError(params.errors)
+        
         params = params.data
+        banned_routes = params.get('banned_routes').split(',')
+
         variables = {
-            "fromLocation": {
-                "coordinates": {
-                    "latitude": params['from_lat'],
-                    "longitude": params['from_lon']
-                }
-            },
-            "toLocation": {
-                "coordinates": {
-                    "latitude": params['to_lat'],
-                    "longitude": params['to_lon']
-                }
-            },
+            "fromLocation": build_location_variable(params['start']),
+            "via": build_via_variable(params.get('via')),
+            "toLocation": build_location_variable(params['end']),
+            
             "dateTime": params['datetime'],
             "numTripPatterns": params['limit'],
-            "via": build_via_variable(params.get('via')),
+            "maximumTransfers": params['max_transfers'],
+            "arriveBy": params['arrive_by'],
+            "banned": {
+                'lines': banned_routes  
+            }
             # get_transit_mode(params['vehicle_types'])
         }            
         

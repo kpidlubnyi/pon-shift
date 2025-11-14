@@ -37,7 +37,8 @@ if [ ! -d "./graphs_ready" ] || [ ! "$(ls -A ./graphs_ready)" ]; then
     restart_ors_server
     sleep 1
 else
-    ors_echo
+    ors_echo "Found graph! Starting..."
+    download_new_map
     restart_ors_server
     sleep 1
 fi    

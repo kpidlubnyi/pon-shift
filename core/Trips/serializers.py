@@ -11,45 +11,64 @@ from Stops.serializers import *
 from common.models.common import *
 from common.services.mongo import *
 
-# TODO: add Warsaw bound coordinates to from/to params
 class SearchedTripsSerializer(serializers.Serializer):
-    from_lat = serializers.FloatField(
-        required = True
-    )
+    start = serializers.CharField(required=True)
+    end = serializers.CharField(required = True)
+    datetime = serializers.DateTimeField(default = tz.localtime())
+    via = serializers.CharField(required = False)
+    arrive_by = serializers.BooleanField(default=False)
+    banned_routes = serializers.CharField(required=False)
     
-    from_lon = serializers.FloatField(
-        required = True
-    )
-
-    to_lat = serializers.FloatField(
-        required = True
-    )
+    max_transfers = serializers.IntegerField(
+        min_value = 0,
+        max_value= 4,
+        default=4
+    )   
     
-    to_lon = serializers.FloatField(
-        required = True
-    )
- 
-    datetime = serializers.DateTimeField(
-        default = tz.localtime()
-    )
-
     limit = serializers.IntegerField(
         min_value = 1,
         max_value = 100,
         default = 16
     )
 
-    via = serializers.CharField(
-        required = False
-    )
-
-    def validate_via(self, value:str):
-        def validate_cooordinate(coord:str) -> None:
-            pattern = r'\d{1,2}.\d{1,12}'
-
+    @staticmethod
+    def _validate_cooordinate(coord:str) -> None:
+            pattern = r'\d{1,2}\.\d{1,12}'
             if not re.match(pattern, coord):
                 raise serializers.ValidationError('Incorrect coordinate!')
+    
+    def _validate_location_point(self, location_point: str):
+        lat, lon = location_point.split(',')
+        self._validate_cooordinate(lat)
+        self._validate_cooordinate(lon)
+
+    def validate_start(self, value:str) -> str:
+        try:
+            self._validate_location_point(value)
+        except Exception as e:
+            raise serializers.ValidationError(e)
         
+        return value
+    
+    def validate_end(self, value:str) -> str:
+        try:
+            self._validate_location_point(value)
+        except Exception as e:
+            raise serializers.ValidationError(e)
+        
+        return value
+    
+    def validate_banned_routes(self, value:str) -> str:
+        banned_routes = value.split(',')
+        routes = Route.objects.all().values_list('route_id', flat=True)
+
+        for banned_route in banned_routes:
+            if banned_route not in routes:
+                raise serializers.ValidationError(f'Route {banned_route} not in database!')
+        
+        return value
+        
+    def validate_via(self, value:str):
         def validate_minimum_wait_time(val:str) -> None:
             pattern = r'^(\d+[smhd])+$|^P(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$'
             
@@ -67,8 +86,8 @@ class SearchedTripsSerializer(serializers.Serializer):
                     Every via visit point should have 3 values: 
                     lat, lon and duration of being there!
                     """)
-            validate_cooordinate(visit_point[0])
-            validate_cooordinate(visit_point[1])
+            self._validate_cooordinate(visit_point[0])
+            self._validate_cooordinate(visit_point[1])
             validate_minimum_wait_time(visit_point[2])
 
         return value
