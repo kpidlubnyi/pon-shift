@@ -11,6 +11,7 @@ from Stops.serializers import *
 from common.models.common import *
 from common.services.mongo import *
 
+
 class SearchedTripsSerializer(serializers.Serializer):
     start = serializers.CharField(required=True)
     end = serializers.CharField(required = True)
@@ -18,18 +19,18 @@ class SearchedTripsSerializer(serializers.Serializer):
     via = serializers.CharField(required = False)
     arrive_by = serializers.BooleanField(default=False)
     banned_routes = serializers.CharField(required=False)
-    
-    max_transfers = serializers.IntegerField(
-        min_value = 0,
-        max_value= 4,
-        default=4
-    )   
-    
-    limit = serializers.IntegerField(
-        min_value = 1,
-        max_value = 100,
-        default = 16
-    )
+    max_transfers = serializers.IntegerField(min_value=0, max_value=4, default=4)   
+    limit = serializers.IntegerField(min_value=1, max_value=100, default=16)
+    page_cursor = serializers.CharField(required=False)
+
+    _street_modes = ['foot', 'bicycle']
+    access_mode = serializers.ChoiceField(_street_modes, allow_blank=True, required=False)
+    egress_mode = serializers.ChoiceField(_street_modes, allow_blank=True, required=False)
+    direct_mode = serializers.ChoiceField(_street_modes, allow_blank=True, required=False)
+
+    transit_modes = serializers.CharField(required=False)
+
+
 
     @staticmethod
     def _validate_cooordinate(coord:str) -> None:
@@ -91,7 +92,14 @@ class SearchedTripsSerializer(serializers.Serializer):
             validate_minimum_wait_time(visit_point[2])
 
         return value
-
+    
+    def validate_transit_modes(self, value:str) -> str:
+        acceptable_modes = ['bus', 'tram', 'rail', 'metro']
+        for mode in value.split(','):
+            if mode not in acceptable_modes:
+                raise serializers.ValidationError(f'{mode}: mode not in acceptable modes!')
+        
+        return value
 
 class BaseTripSerializer(serializers.ModelSerializer):
     route_name = serializers.SerializerMethodField()

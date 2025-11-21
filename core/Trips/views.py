@@ -24,8 +24,6 @@ class SearchedTrips(APIView):
             raise ValidationError(params.errors)
         
         params = params.data
-        banned_routes = params.get('banned_routes').split(',')
-
         variables = {
             "fromLocation": build_location_variable(params['start']),
             "via": build_via_variable(params.get('via')),
@@ -35,11 +33,11 @@ class SearchedTrips(APIView):
             "numTripPatterns": params['limit'],
             "maximumTransfers": params['max_transfers'],
             "arriveBy": params['arrive_by'],
-            "banned": {
-                'lines': banned_routes  
-            }
-            # get_transit_mode(params['vehicle_types'])
-        }            
+
+            "modes": build_modes_variable(params),
+            "banned": build_banned_variable(params),
+            "pageCursor": params.get('page_cursor')
+        }    
         
         service = OTPService()
         response = service.get_trips(**variables)

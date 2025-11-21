@@ -30,7 +30,7 @@ def process_trip_pattern(trip_response: dict):
             if not leg['serviceJourney']:
                 del leg['serviceJourney']
                 return
-            trip_id: str = leg['serviceJourney']['id'].replace(':', '-', 1)
+            trip_id: str = leg['serviceJourney']['id']
             trip = Trip.objects.get(trip_id=trip_id)
             trip = TripBriefSerializer(trip).data
             leg['trip'] = trip
@@ -79,3 +79,63 @@ def build_via_variable(via_str: str | None) -> list | None:
         via.append(visit_json)
     
     return via
+
+
+def get_necessary_params(params:dict, needed_params:tuple[str]) -> dict:
+    return {
+        param: params.get(param)
+        for param in needed_params
+    }
+
+
+def no_needed_params(params:dict) -> bool:
+    return all((1 if not v else 0 for v in params.values()))
+
+
+def build_banned_variable(params:dict) -> dict | None:
+    variable = dict()
+    needed_params = ('lines',)
+    params = get_necessary_params(params, needed_params)
+
+    if no_needed_params(params):
+        return None
+
+    banned_routes = params.get('banned_routes') 
+    if banned_routes:
+        variable['lines'] = [line for line in banned_routes.split(',')]
+
+    return variable
+
+
+def build_modes_variable(params:dict) -> dict | None:
+    def build_transport_modes(param):
+        modes = param.split(',')
+        return [{'transportMode': mode} for mode in modes]
+    
+    variable = dict()
+    needed_params = ('access_mode', 'egress_mode', 'direct_mode', 'transit_modes')
+    params = get_necessary_params(params, needed_params)
+
+    if no_needed_params(params):
+        return None
+    
+    access, egress, direct, transit = params.values() 
+
+    if transit and not (access and egress):
+        raise ValueError('Transit modes always goes with access and egress modes!')
+    elif (bool(access) ^ bool(egress)):
+        raise ValueError('Access mode always goes with egress vice versa!')
+    
+    if access and egress:
+        variable = {
+            'accessMode': access,
+            'egressMode': egress
+        }
+        if transit:
+            transit = build_transport_modes(transit)
+            variable['transportModes'] = transit
+    
+    if direct:
+        variable['directMode'] = direct
+
+    return variable

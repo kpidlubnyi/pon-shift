@@ -17,6 +17,15 @@
       "url": "https://mkuran.pl/gtfs/warsaw/vehicles.pb",
       "feedId": "WTP",
       "frequency": "15s"
+    },
+    {
+      "type" : "vehicle-rental",
+      "sourceType" : "gbfs",
+      "language" : "en",
+      "frequency" : "15s",
+      "allowKeepingRentedVehicleAtDestination" : false,
+      "geofencingZones" : false,
+      "url" : "https://gbfs.nextbike.net/maps/gbfs/v2/nextbike_vw/gbfs.json"
     }
   ]
 }
