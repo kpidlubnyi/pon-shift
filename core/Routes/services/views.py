@@ -13,15 +13,17 @@ from ..serializers import *
 type LocationPoint = tuple[Decimal, Decimal]
 
 
-def get_simple_distance(point1: LocationPoint, point2: LocationPoint) -> float:
-    return geodesic(point1, point2).kilometers
+def calculate_simple_distance(points, unit='km'):
+    total = 0
+    for a, b in zip(points[:-1], points[1:]):
+            total += geodesic(a, b).meters
 
-def get_route_distance(points: list[LocationPoint]) -> float:
-    distance = 0.0
-    for i in range(len(points)-1):
-        distance += get_simple_distance(points[i], points[i+1])
+    match unit:
+        case 'm':
+            return total
+        case 'km':
+            return total / 1000
 
-    return distance
 
 def get_shortest_route(point1: LocationPoint, point2: LocationPoint, mode: str = 'foot-walking'):
     host, port = settings.ORS_HOST, settings.ORS_PORT
@@ -45,7 +47,7 @@ def get_shortest_route(point1: LocationPoint, point2: LocationPoint, mode: str =
 
 def calculate_zoom(point1, point2):
     z = 0
-    d = get_route_distance([point1, point2])
+    d = calculate_simple_distance([point1, point2])
     if d >= 15:
         z = 12
     elif 15 > d >= 7.5:

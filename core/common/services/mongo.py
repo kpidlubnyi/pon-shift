@@ -38,15 +38,23 @@ def replace_data(collection: str, data: list[dict]) -> None:
         db[collection].delete_many({})
         db[collection].insert_many(data)
 
-def get_rt_vehicle_data(carrier_code:str, trip_id:str):
+def prune_underscore_id(doc):
+    del doc['_id']
+    return doc
+
+def get_rt_vehicle_data(trip_id:str):
+    carrier_code, trip_id = trip_id.split(':', maxsplit=1)
+
     if carrier_code not in settings.ALLOWED_CARRIERS:
         raise ValueError('Carrier code not in allowed carriers!')
     
     collection_name = f'{carrier_code}_RT_V'
-    trip_id = '-'.join(trip_id.split('-')[1:])
+    
+    with MongoConnection() as db:
+        doc = db[collection_name].find_one({'vehicle.trip.trip_id': trip_id})
 
-    try:
-        with MongoConnection() as db:
-            return db[collection_name].find_one({'vehicle.trip.trip_id': trip_id})
-    except:
-        return None
+        if not doc:
+            raise ValueError(f"There is no realtime data for vehicle with trip id '{trip_id}'!")
+        
+        doc = prune_underscore_id(doc) if doc else None
+        return carrier_code, doc

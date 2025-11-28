@@ -27,4 +27,4 @@ RUN python3 manage.py collectstatic --noinput
 EXPOSE 8000
 
 ENTRYPOINT [ "./entrypoint.sh" ]
-CMD ["gunicorn", "-c", "gunicorn.conf.py", "core.wsgi:application"]
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "core.asgi:application"]

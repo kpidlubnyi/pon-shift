@@ -109,7 +109,7 @@ class BaseTripSerializer(serializers.ModelSerializer):
         return obj.route.route_long_name
     
     def get_has_realtime(self, obj:Trip):
-        if get_rt_vehicle_data(obj.carrier.carrier_code, obj.trip_id):
+        if get_rt_vehicle_data(obj.trip_id):
             return True
         return False
 

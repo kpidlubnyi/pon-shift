@@ -31,10 +31,9 @@ def get_n_nearest_points(selfpoint: tuple[float, float], dataset: list[Stop], n:
         raise ValueError('Cannot make a sample larger than the entire set!')
     
     distances = []
-    
     for stop in dataset:
         point = stop.get_coordinates()
-        distance = get_simple_distance(selfpoint, point)
+        distance = calculate_simple_distance([selfpoint, point])
         distances.append((distance, stop))
     
     n_smallest = heapq.nsmallest(n, distances, key=lambda x: x[0])

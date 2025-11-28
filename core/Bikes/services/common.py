@@ -68,7 +68,7 @@ def find_bike_stations_nearby(location: tuple[float, float], radius: int = 200, 
             continue
         
         station_location = (station['lat'], station['lon'])
-        route = get_simple_distance(location, station_location)
+        route = calculate_simple_distance([location, station_location])
         station['distance'] = route
 
         stations.append(station)
@@ -78,7 +78,7 @@ def find_bike_stations_nearby(location: tuple[float, float], radius: int = 200, 
     for station in stations:
         station_location = (station['lat'], station['lon'])
         route_to_station = get_shortest_route(location, station_location)
-        station['distance'] = round(get_route_distance(route_to_station), 3) 
+        station['distance'] = round(calculate_simple_distance(route_to_station), 3) 
     
     stations = sorted(stations,key=lambda x: x['distance'])
     return stations
