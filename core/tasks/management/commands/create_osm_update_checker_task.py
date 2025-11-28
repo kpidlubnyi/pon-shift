@@ -7,7 +7,7 @@ from ...services.gtfs.tasks import validate_cron
 class Command(BaseCommand):
     help = 'Creates GTFS checker for all carriers immediately after launching the Docker'
 
-    @add_cron_arguments
+    @add_crontab_arguments
     def add_arguments(self, parser):
         parser.add_argument('-r', action='store_true',
                     help='Boolean argument indicating whether to create a realtime updater')

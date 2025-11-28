@@ -6,7 +6,7 @@ from ...services.commands import *
 
 
 class Command(BaseCommand):
-    @add_cron_arguments
+    @add_crontab_arguments
     def add_arguments(self, parser):
         pass
 

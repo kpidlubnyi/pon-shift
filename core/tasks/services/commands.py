@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 logger = logging.getLogger(__name__)
 
 
-def add_cron_arguments(func):
+def add_crontab_arguments(func):
     @wraps(func)
     def wrapper(self, parser):
         result = func(self, parser)
