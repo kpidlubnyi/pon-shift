@@ -48,7 +48,13 @@ class NestedDict(UserDict):
         if isinstance(data, dict):
             return NestedDict(data)
         return data
-            
+    
+    def to_dict(self):
+        return {k: v.to_dict() if isinstance(v, NestedDict)
+                else v if not isinstance(v, dict)
+                else NestedDict(v).to_dict()
+                for k, v in self.data.items()}
+        
 
 def transform_rt_vehicle_data(carrier:str, data: dict) -> dict:
     def get_wkd_position(trip_id, st_updates):        
@@ -156,7 +162,7 @@ def transform_rt_vehicle_data(carrier:str, data: dict) -> dict:
         case 'WTP':       
             data = data['vehicle']
             new_data['trip_id'] = add_carrier_prefix(carrier, data['trip.trip_id'])
-            new_data['position'] = data['position']
+            new_data['position'] = data['position'].to_dict()
             new_data['vehicle_number'] = data['vehicle.label']
 
             lat, lon = map(lambda x: float(new_data['position'][x]), ('latitude', 'longitude'))
@@ -165,6 +171,7 @@ def transform_rt_vehicle_data(carrier:str, data: dict) -> dict:
             data = data['trip_update']
             new_data['trip_id'] = add_carrier_prefix(carrier, data['trip.trip_id'])
             new_data['position'] = get_wkd_position(new_data['trip_id'], data['stop_time_update'])
+            new_data['vehicle_number'] = None
             new_data['stop_time_update'] = transform_wkd_st_updates(data['stop_time_update'])
 
     return new_data

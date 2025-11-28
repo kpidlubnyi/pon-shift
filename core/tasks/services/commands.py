@@ -3,7 +3,7 @@ import logging
 from functools import wraps
 from enum import StrEnum
 
-from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from django_celery_beat.models import PeriodicTask, CrontabSchedule, IntervalSchedule
 from django.core.management.base import BaseCommand
 
 
@@ -28,16 +28,43 @@ def add_crontab_arguments(func):
         return result
     return wrapper
 
+def add_interval_arguments(func):
+    @wraps(func)
+    def wrapper(self, parser):
+        result = func(self, parser)
+        
+        parser.add_argument('--every', '-e', type=int, default=15,
+                            help='Interval value (default: 15)')
+        
+        parser.add_argument('--period', '-p', type=str,
+            choices=['seconds', 'minutes', 'hours', 'days', 'weeks'],
+            default='seconds',
+            help='Interval period (default: seconds)'
+        )
+        
+        return result
+    return wrapper
 
 class TaskCreationStatus(StrEnum):
     CREATED = 'created'
     EXISTS = 'exists'
     FAILED = 'failed'
 
-def create_periodic_task(crontab: CrontabSchedule, task_name: str, task_path: str, *args) -> tuple[TaskCreationStatus, str]:
+def create_periodic_task(
+        schedule: CrontabSchedule | IntervalSchedule, 
+        task_name: str, 
+        task_path: str, 
+        *args) -> tuple[TaskCreationStatus, str]:
+    
+    match schedule:
+        case CrontabSchedule():
+            sch_key = 'crontab'
+        case IntervalSchedule():
+            sch_key = 'interval'
+   
     try:
         _, created = PeriodicTask.objects.get_or_create(
-            crontab=crontab,
+            **{sch_key: schedule},
             name=task_name,
             task=task_path,
             args=json.dumps(args)
@@ -71,9 +98,9 @@ def create_gtfs_periodic_task(carrier: str, schedule: CrontabSchedule):
     status, text = create_periodic_task(schedule, task_name, task_path)
     return status, text
 
-def create_gtfs_rt_periodic_task(feed_name: str, schedule: CrontabSchedule):
+def create_gtfs_rt_periodic_task(feed_name: str, interval:IntervalSchedule):
     task_name = f'GTFS_UPDATING_{feed_name}_RT'
     task_path = 'tasks.tasks.update_gtfs_realtime'
 
-    status, text = create_periodic_task(schedule, task_name, task_path, feed_name)
+    status, text = create_periodic_task(interval, task_name, task_path, feed_name)
     return status, text

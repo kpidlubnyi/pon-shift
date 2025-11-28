@@ -2,8 +2,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 
 from ...services.commands import *
-from ...services.gtfs.tasks import validate_cron
-
+from ...services.gtfs.tasks import validate_interval
 
 class Command(BaseCommand):
     help = 'Creates GTFS-RT updater for all carriers immediately after launching the Docker'
@@ -13,9 +12,10 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        schedule = validate_cron(options)
+        interval = validate_interval(options)
 
-        for feed_name in settings.SERVED_FEEDS:
-            if "_RT_" in feed_name:
-                status, text = create_gtfs_rt_periodic_task(feed_name, schedule)
-                print_task_status(self, status, text)
+        if interval:
+            for feed_name in settings.SERVED_FEEDS:
+                if "_RT_" in feed_name:
+                    status, text = create_gtfs_rt_periodic_task(feed_name, interval)
+                    print_task_status(self, status, text)

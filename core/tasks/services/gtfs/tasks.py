@@ -7,7 +7,7 @@ import os
 
 from django.conf import settings
 from django.core.management import CommandError
-from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from django_celery_beat.models import PeriodicTask, CrontabSchedule, IntervalSchedule
 
 from common.services.redis import *
 from .download import get_from_feed
@@ -83,7 +83,7 @@ def validate_carrier(options):
     return name
 
 
-def validate_cron(options):
+def validate_cron(options) -> CrontabSchedule | None:
     try:
         cron_names = ['minute', 'hour', 'day_of_month', 'month_of_year', 'day_of_week']
         cron_args = {name: options[name] for name in cron_names}
@@ -94,10 +94,15 @@ def validate_cron(options):
         return None
     
 
-def validate_command_args(options: dict) -> tuple[str, dict]:
-    carrier = validate_carrier(options)
-    cron_args = validate_cron(options)    
-    return carrier, cron_args
+def validate_interval(options) -> IntervalSchedule | None:
+    try:
+        interval_names = ['every', 'period']
+        interval_args = {name: options[name] for name in interval_names}
+        interval, _ = IntervalSchedule.objects.get_or_create(**interval_args)
+        return interval
+    except Exception as e:
+        logger.error(f'Error during validation of interval arguments: {e}')
+        return None
 
 
 def update_sha_in_redis(feed, carrier:str):
