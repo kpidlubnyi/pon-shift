@@ -13,7 +13,7 @@ from tasks.services.gtfs.models import add_carrier_prefix
 from Routes.services.views import LocationPoint, calculate_simple_distance
 
 
-AVERAGE_SPEED = {
+AVERAGE_SPEED_KM_H = {
     Route.RouteTypeChoice.TRAM: 17,
     Route.RouteTypeChoice.BUS: 25,
     Route.RouteTypeChoice.METRO: 33,
@@ -32,9 +32,8 @@ class ShapeSequenceNT(NamedTuple):
     shape_pt_lon: float
 
 class NestedDict(UserDict):
-    def __getitem__(self, *keys):
-        if len(keys) == 1 and isinstance(keys[0], tuple):
-            keys = keys[0]
+    def __getitem__(self, key):
+        keys = key.split('.')
 
         data = self.data
         for i, k in enumerate(keys):
@@ -45,173 +44,127 @@ class NestedDict(UserDict):
                 data = v
             else:
                 raise KeyError(keys[:i+1])
+        
+        if isinstance(data, dict):
+            return NestedDict(data)
         return data
             
 
-
 def transform_rt_vehicle_data(carrier:str, data: dict) -> dict:
-    def get_wkd_position(trip_id):
-        nonlocal data, carrier
-        
+    def get_wkd_position(trip_id, st_updates):        
         trip_stop_ids = TripStops.objects.get(trip_id=trip_id).stop_ids
-        next_stop_to_arrive = data['stop_time_updates'][0]['stop_id']
-        id_of_previous_stop = trip_stop_ids.index(next_stop_to_arrive) - 1
-        previous_stop = trip_stop_ids[id_of_previous_stop]
+        next_stop_to_arrive = st_updates[0]['stop_id']
+        prev_stop_id = trip_stop_ids.index(next_stop_to_arrive) - 1
+        prev_stop = trip_stop_ids[prev_stop_id]
 
         return {'between': [
-            {'stop_id': previous_stop},
+            {'stop_id': prev_stop},
             {'stop_id': next_stop_to_arrive}
         ]}
     
-    #TODO:розібратись що не так
-    def get_wtp_st_updates(self_location:LocationPoint, trip_id:str):
+    def get_wtp_st_updates(self_location: LocationPoint, trip_id: str):        
         def get_data_for_trip(
-            trip_id:str
+            trip_id: str
         ) -> tuple[Trip, QuerySet[StopTime], list[StopNT], list[ShapeSequenceNT]]:
-        
+            
             trip = Trip.objects.get(trip_id=trip_id)
-            stop_times = StopTime.objects \
-                .filter(trip_id=trip_id)
+            stop_times = StopTime.objects.filter(trip_id=trip_id)
 
             stop_ids = TripStops.objects.get(trip_id=trip_id).stop_ids
-            stops_locations = Stop.objects \
-                .filter(stop_id__in=stop_ids) \
-                .values_list('stop_id', 'stop_lat', 'stop_lon', named=True)
-
-            shape_id = trip.shape.shape_id
-            shape_sequence = ShapeSequence.objects \
-                .filter(shape__shape_id=shape_id) \
-                .order_by('shape_pt_sequence') \
-                .values_list('id', 'shape_pt_sequence', 'shape_pt_lat', 'shape_pt_lon', named=True)
+            stops_locs = list(Stop.objects
+                .filter(stop_id__in=stop_ids)
+                .values_list('stop_id', 'stop_lat', 'stop_lon', named=True))
             
-            return (trip, stop_times, stops_locations, shape_sequence) 
-
-        def get_nearest_shape_point(
-                self_location: LocationPoint, 
-                shape_sequence: list[ShapeSequenceNT]
-            ) -> LocationPoint:
+            shape_seq = list(ShapeSequence.objects 
+                .filter(shape__shape_id=trip.shape.shape_id) 
+                .order_by('shape_pt_sequence') 
+                .values_list('id', 'shape_pt_sequence', 'shape_pt_lat', 'shape_pt_lon', named=True))
             
-            return min([
-                (
-                    s.id, 
-                    s.shape_pt_sequence, 
-                    calculate_simple_distance([self_location, (s.shape_pt_lat, s.shape_pt_lon)])
-                )
-                for s in shape_sequence
-            ], key=lambda x: x[2])
-
-        def find_next_stop(
-            nearest_point: tuple[int, int, float], 
-            shape_sequence: list[ShapeSequenceNT], 
-            stops_locations: list[StopNT], 
-            stop_times: QuerySet[StopTime]
-        ) -> tuple[StopNT, int, int]:
-            
-            n = nearest_point[1]
-            shape_sequence = shape_sequence[n:]
-            next_stop = None 
-            shape_sequence_n = None
-
-            stop_n = 0
-            while not next_stop:
-                shape = shape_sequence[stop_n]
-                location_point = (shape.shape_pt_lat, shape.shape_pt_lon)
-                for stop in stops_locations:
-                    stop_location = (stop.stop_lat, stop.stop_lon)
-                    if calculate_simple_distance([location_point, stop_location], unit='m') <= 25:
-                        next_stop = stop
-                        stop_sequence_n = stop_times.get(stop_id=stop.stop_id).stop_sequence
-                        shape_sequence_n = shape.shape_pt_sequence - n
-                stop_n += 1
-
-            if not next_stop:
-                raise ValueError('Nearest stop to vehicle location not found!')
-            
-            return next_stop, stop_sequence_n, shape_sequence_n
+            return (trip, stop_times, stops_locs, shape_seq)
         
-        def get_location_points_from_shape_sequence( 
-            shape_sequence: list[ShapeSequenceNT],
-            from_point: int
-        ) -> list[LocationPoint]:    
-            nonlocal self_location
-            shape_sequence = shape_sequence[:from_point]
-            shape_sequence = [
-                (s.shape_pt_lat, s.shape_pt_lon) 
-                for s in shape_sequence
-            ]
-            return [self_location, *shape_sequence]
-
-        def calculate_time_delta(
-            trip: Trip,
-            next_stop: StopNT, 
-            location_points: list[LocationPoint]
-        ) -> tz.timedelta:
-
-            distance_to_next_stop = calculate_simple_distance(location_points, unit='m')
-            vehicle_speed = AVERAGE_SPEED[trip.route.route_type] / 3.6
-            mins_to_next_stop = tz.timedelta(minutes=(distance_to_next_stop / vehicle_speed) // 60) 
+        def get_nearest_shape_p_nr(self_loc: LocationPoint, shape_seq: list[ShapeSequenceNT]) -> int:            
+            shape_seq_locs = [(sh.shape_pt_lat, sh.shape_pt_lon) for sh in shape_seq]
+            distances = [calculate_simple_distance([self_loc, loc], unit='m') for loc in shape_seq_locs]            
+            nearest_idx = min(range(len(distances)), key=lambda x: distances[x])
             
-            now = tz.now()
-            next_stop = stop_times.get(stop__stop_id=next_stop.stop_id)
-            midnight = tz.make_aware(datetime.combine(tz.localdate(), time(0, 0)))
-            next_stop_ar_time = midnight + parse_gtfs_time(next_stop.arrival_time)
-
-            if next_stop_ar_time - now >= tz.timedelta(days=1):
-                next_stop_ar_time -= tz.timedelta(days=1)
-
-            rt_ar_time = now + mins_to_next_stop
-            delta = rt_ar_time - next_stop_ar_time 
-            return delta
-
-
-        trip, stop_times, stop_locs, shape_seq = get_data_for_trip(trip_id)
-        nearest_point = get_nearest_shape_point(self_location, shape_seq)
-        next_stop, stop_seq_n, shape_seq_n = find_next_stop(
-            nearest_point, shape_seq, 
-            stop_locs, stop_times
-        )
-        location_points = get_location_points_from_shape_sequence(shape_seq, shape_seq_n)
-        delta = calculate_time_delta(trip, next_stop, location_points)
-        from_next_stop_to_end = stop_times.filter(stop_sequence__gte=stop_seq_n)
+            return nearest_idx
         
-        stop_time_update = list()
-        for s in from_next_stop_to_end:
-            arrival_time = tz.datetime.strptime(s.arrival_time, '%H:%M:%S').time()
-            arrival_time_dt = tz.datetime.combine(tz.localdate(), arrival_time)
-            rt_arrival_time = (arrival_time_dt + delta).timestamp()
+        def find_next_stop_and_its_nearest_point(shape_seq: list[ShapeSequenceNT], stops_locs: list[StopNT]):            
+            for i, sh in enumerate(shape_seq):
+                sh_loc = (sh.shape_pt_lat, sh.shape_pt_lon)
+                
+                for s in stops_locs:
+                    stop_loc = (s.stop_lat, s.stop_lon)
+                    distance = calculate_simple_distance([sh_loc, stop_loc], unit='m')
+                    
+                    if distance <= 25:
+                        return s, i
             
-            stop_time_update.append({
-                'departure': {
-                    'timestamp': rt_arrival_time,
-                    'time': tz.datetime.strftime(arrival_time_dt + delta, '%H:%M:%S'),
-                    'delta': delta.seconds
-                },
-                'stop_id':s.stop_id,
-                'stop_name': Stop.objects.get(stop_id=s.stop_id).stop_name
-            }) 
+            raise ValueError("No next stop found in 25m of shape sequence")
+        
+        trip, stop_times, stops_location, shape_sequence = get_data_for_trip(trip_id)
+        nearest_shape_point = get_nearest_shape_p_nr(self_location, shape_sequence)
+        shape_sequence = shape_sequence[nearest_shape_point:]
+        
+        next_stop, its_nearest_point = find_next_stop_and_its_nearest_point(shape_sequence, stops_location)
+        next_stop_sequence_nr = stop_times.get(stop_id=next_stop.stop_id).stop_sequence
+        stop_times = stop_times.filter(stop_sequence__gte=next_stop_sequence_nr)
+        shape_sequence = shape_sequence[its_nearest_point:]
+        
+        next_stop_loc = (next_stop.stop_lat, next_stop.stop_lon)
+        distance_to_next_stop = calculate_simple_distance([self_location, next_stop_loc])
+        vehicle_speed = AVERAGE_SPEED_KM_H[trip.route.route_type] / 60.0  # km/min
+        
+        minutes_to_next_stop = int(distance_to_next_stop / vehicle_speed)
+        delta = tz.timedelta(minutes=minutes_to_next_stop)
+        
+        stop_time_updates = list()
+        for stop_time in stop_times.iterator():
+            arrival_time = parse_gtfs_time(stop_time.arrival_time) + delta
+            new_time = timedelta_to_str(arrival_time)
+            stop_time_updates.append({
+                "stop_id": stop_time.stop.stop_id,
+                "new_time": new_time
+            })
+            
+        return stop_time_updates   
+     
+    def transform_wkd_st_updates(st_updates: list[dict]):
+        new_updates = list()
+        for st_update in st_updates:
+            st_update = NestedDict(st_update)
+            stop_id = st_update['stop_id']
+            
+            st_time = datetime.fromtimestamp(
+                int(st_update['departure.time'])
+            )
+            new_time = st_time.strftime('%H:%M:%S')
+            
+            new_updates.append({
+                'stop_id': stop_id,
+                'new_time': new_time
+            })
+        
+        return new_updates
+        
 
-        return stop_time_update
+    data = NestedDict(data)
+    new_data = dict()
+    new_data['carrier'] = carrier
 
-    try:
-        data = NestedDict(data)
-        new_data = dict()
-        new_data['carrier'] = carrier
+    match carrier:
+        case 'WTP':       
+            data = data['vehicle']
+            new_data['trip_id'] = add_carrier_prefix(carrier, data['trip.trip_id'])
+            new_data['position'] = data['position']
+            new_data['vehicle_number'] = data['vehicle.label']
 
-        match carrier:
-            case 'WTP':       
-                try: 
-                    new_data['trip_id'] = add_carrier_prefix(carrier, data['vehicle', 'trip', 'trip_id'])
-                    new_data['position'] = data['vehicle', 'position']
-                    new_data['vehicle_number'] = data['vehicle', 'vehicle', 'label']
+            lat, lon = map(lambda x: float(new_data['position'][x]), ('latitude', 'longitude'))
+            new_data['stop_time_update'] = get_wtp_st_updates((lat, lon), new_data['trip_id'])
+        case 'WKD':
+            data = data['trip_update']
+            new_data['trip_id'] = add_carrier_prefix(carrier, data['trip.trip_id'])
+            new_data['position'] = get_wkd_position(new_data['trip_id'], data['stop_time_update'])
+            new_data['stop_time_update'] = transform_wkd_st_updates(data['stop_time_update'])
 
-                    lat, lon = map(lambda x: float(new_data['position'][x]), ('latitude', 'longitude'))
-                    new_data['stop_time_updates'] = get_wtp_st_updates((lat, lon), new_data['trip_id'])
-                except Exception as e:
-                    raise Exception(f'error in wtp case: {e}')
-            case 'WKD':
-                new_data['trip_id'] = add_carrier_prefix(carrier, data['trip_update', 'trip', 'trip_id'])
-                new_data['position'] = get_wkd_position(new_data['trip_id'])
-                new_data['stop_time_updates'] = data['stop_time_updates']
-    except Exception as e:
-        raise Exception(f'error in main body: {e}')
     return new_data

@@ -51,7 +51,12 @@ def get_rt_vehicle_data(trip_id:str):
     collection_name = f'{carrier_code}_RT_V'
     
     with MongoConnection() as db:
-        doc = db[collection_name].find_one({'vehicle.trip.trip_id': trip_id})
+        key = {
+            'WTP': 'vehicle.trip.trip_id',
+            'WKD': 'trip_update.trip.trip_id'
+        }.get(carrier_code)
+        
+        doc = db[collection_name].find_one({key: trip_id})
 
         if not doc:
             raise ValueError(f"There is no realtime data for vehicle with trip id '{trip_id}'!")

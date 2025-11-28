@@ -14,16 +14,11 @@ type LocationPoint = tuple[Decimal, Decimal]
 
 
 def calculate_simple_distance(points, unit='km'):
-    total = 0
-    for a, b in zip(points[:-1], points[1:]):
-            total += geodesic(a, b).meters
-
-    match unit:
-        case 'm':
-            return total
-        case 'km':
-            return total / 1000
-
+    if unit not in {'km', 'm'}:
+        raise ValueError('Unit parameter must be in {"km", "m"}!')
+    
+    total = sum([geodesic(a,b).meters for a, b in zip(points, points[1:])])
+    return total if unit == 'm' else total / 1000.0
 
 def get_shortest_route(point1: LocationPoint, point2: LocationPoint, mode: str = 'foot-walking'):
     host, port = settings.ORS_HOST, settings.ORS_PORT
