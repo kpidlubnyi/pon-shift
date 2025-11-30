@@ -18,4 +18,4 @@ class Command(BaseCommand):
             for feed_name in settings.SERVED_FEEDS:
                 if "_RT_" in feed_name:
                     status, text = create_gtfs_rt_periodic_task(feed_name, interval)
-                    print_task_status(self, status, text)
+                    print_task_creation_status(self, status, text)

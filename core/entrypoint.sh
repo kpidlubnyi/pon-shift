@@ -17,6 +17,6 @@ echo "Created. Creating a OSM update checker..."
 python manage.py create_osm_update_checker_task -m "*/5"
 
 echo "Created. Creating a GTFS-RT updaters..."
-python manage.py create_gtfs_rt_update_tasks
+python manage.py create_gtfs_rt_update_tasks -e 15 -p "seconds"
 
 exec "$@"

@@ -14,4 +14,4 @@ class Command(BaseCommand):
         task_name = f'VETURILO_UPDATING'
         task_path = 'tasks.tasks.update_veturilo_data',
         status, text = create_periodic_task(schedule, task_name, task_path)
-        print_task_status(self, status, text)
+        print_task_creation_status(self, status, text)

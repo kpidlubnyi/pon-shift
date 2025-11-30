@@ -18,4 +18,4 @@ class Command(BaseCommand):
         task_path = 'tasks.tasks.check_gtfs_updates'
         
         status, text = create_periodic_task(schedule, task_name, task_path)
-        print_task_status(self, status, text)
+        print_task_creation_status(self, status, text)

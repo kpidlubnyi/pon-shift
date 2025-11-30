@@ -81,7 +81,7 @@ def create_periodic_task(
         logger.exception(text:=f'Error while creating a {task_name} periodic task: {e}')
         return TaskCreationStatus.FAILED, text
     
-def print_task_status(command: BaseCommand, status: TaskCreationStatus, text: str) -> None:
+def print_task_creation_status(command: BaseCommand, status: TaskCreationStatus, text: str) -> None:
     style_map = {
         TaskCreationStatus.CREATED: command.style.SUCCESS,
         TaskCreationStatus.EXISTS: command.style.WARNING,
