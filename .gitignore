@@ -22,3 +22,12 @@ todo.txt
 analisys.ipynb
 shared_flags/*
 !shared_flags/.gitkeep
+
+ors/graphs_build/*
+!ors/graphs_build/.gitkeep
+
+ors/graphs_ready/*
+!ors/graphs_ready/.gitkeep
+
+otp/graphs/*
+!otp/graphs/.gitkeep
