@@ -53,15 +53,20 @@ def update_gtfs(feed, carrier: str):
     logger.info(f'Running GTFS update task for {carrier} carrier...')
     
     try:
+        logger.info("Updating GTFS feed hash...")
+        update_sha_in_redis(feed, carrier)
+
+        logger.info('Updated! Importing GTFS...')
         download_and_process_gtfs(feed, carrier)
+
         logger.info("Import complete! Table rearrangement...")
         swap_tables()
-        logger.info('The rearrangement is successful! Updating hash of feed in redis...')
-        update_sha_in_redis(feed, carrier)
+
+        logger.info('The rearrangement is successful! Backing up...')
     except Exception as e:
         logger.error(f'Error during import to test tables: {e}')
+        remove_from_redis(f'{carrier}_sha1')
 
-    logger.info('Updated! Backing up...')
     backup_from_regular_tables()
     logger.info('The backup was successful!')
     gc.collect()

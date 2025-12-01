@@ -1,11 +1,10 @@
-from datetime import datetime, time
+from datetime import datetime
 from typing import NamedTuple
-from collections import UserDict
 
 from django.db.models import QuerySet
 from django.utils import timezone as tz
 
-
+from common.collections import NestedDict
 from common.models import *
 from common.services.gtfs import *
 from Trips.models import TripStops
@@ -20,10 +19,12 @@ AVERAGE_SPEED_KM_H = {
     Route.RouteTypeChoice.TRAIN: 39
 }
 
+
 class StopNT(NamedTuple):
     stop_id: int
     stop_lat: float
     stop_lon: float
+
 
 class ShapeSequenceNT(NamedTuple):
     id: int
@@ -31,30 +32,6 @@ class ShapeSequenceNT(NamedTuple):
     shape_pt_lat: float
     shape_pt_lon: float
 
-class NestedDict(UserDict):
-    def __getitem__(self, key):
-        keys = key.split('.')
-
-        data = self.data
-        for i, k in enumerate(keys):
-            if k in data:
-                v = data[k]
-                if keys[i+1:] and not hasattr(v, '__getitem__'):
-                    raise ValueError(f'Not possible to get item from {v}')
-                data = v
-            else:
-                raise KeyError(keys[:i+1])
-        
-        if isinstance(data, dict):
-            return NestedDict(data)
-        return data
-    
-    def to_dict(self):
-        return {k: v.to_dict() if isinstance(v, NestedDict)
-                else v if not isinstance(v, dict)
-                else NestedDict(v).to_dict()
-                for k, v in self.data.items()}
-        
 
 def transform_rt_vehicle_data(carrier:str, data: dict) -> dict:
     def get_wkd_position(trip_id, st_updates):        

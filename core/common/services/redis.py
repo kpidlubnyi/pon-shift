@@ -1,6 +1,7 @@
 import redis
 from django.conf import settings
 
+
 try:
     redis_pool = redis.ConnectionPool.from_url(
         settings.REDIS,
@@ -37,10 +38,12 @@ def redis_operation(func):
             return None
     return wrapper
 
+
 @redis_operation
 def set_hash_in_redis(hash_to_redis:str, carrier:str, suffix:str = 'sha1'):
     key = f'{carrier}_{suffix}'
     return redis_client.set(key, hash_to_redis)
+
 
 @redis_operation
 def get_hash_from_redis(carrier:str, suffix:str = 'sha1'):
@@ -52,5 +55,9 @@ def get_hash_from_redis(carrier:str, suffix:str = 'sha1'):
         return get_hash_from_redis(carrier, suffix)
     else:
         return hash_from_redis
-        
 
+
+@redis_operation     
+def remove_from_redis(key):
+    if redis_client.get(key):
+        redis_client.delete(key)
