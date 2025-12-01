@@ -12,6 +12,7 @@ def get_proto():
     with open('gtfs-realtime.proto', 'wb') as f:
         f.write(resp.content)
 
+
 def compile_proto_to_py():
     protoc.main([
         "protoc", 
@@ -19,6 +20,7 @@ def compile_proto_to_py():
         "--proto_path=.", 
         "gtfs-realtime.proto"
     ])
+
 
 def parse_gtfs_realtime(pb) -> dict:
     try:
@@ -28,7 +30,6 @@ def parse_gtfs_realtime(pb) -> dict:
         compile_proto_to_py()
         gtfs_realtime_pb2 = __import__('gtfs_realtime_pb2')
 
-
     message = gtfs_realtime_pb2.FeedMessage()
     message.ParseFromString(pb)
     
@@ -36,6 +37,7 @@ def parse_gtfs_realtime(pb) -> dict:
         message,
         preserving_proto_field_name=True,
     )
+
 
 def get_rt_gtfs(feed: dict):
     urls: dict = feed['feeds'][0]['urls']
