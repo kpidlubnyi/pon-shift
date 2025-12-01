@@ -45,7 +45,25 @@ def transform_rt_vehicle_data(carrier:str, data: dict) -> dict:
             {'stop_id': next_stop_to_arrive}
         ]}
     
-    def get_wtp_st_updates(self_location: LocationPoint, trip_id: str):        
+    def get_wtp_st_updates(self_location: LocationPoint, trip_id: str):
+        def ensure_vehicle_has_started(trip_id: str) -> bool:
+            splited_trip_id = trip_id.split(':')
+
+            dep_date, dep_time = splited_trip_id[1], splited_trip_id[-1]
+            dep_date = tz.datetime.strptime(dep_date, '%Y-%m-%d').date()
+            dep_time = tz.datetime.strptime(dep_time, '%H%M').time()
+            
+            now = tz.now()
+            departure_dt = tz.datetime.combine(dep_date, dep_time, 
+                                                 tzinfo=tz.get_default_timezone())
+            
+            print(f'now: {now}')
+            print(f'dep: {departure_dt}')
+            
+            if now >= departure_dt:
+                return True
+            return False
+
         def get_data_for_trip(
             trip_id: str
         ) -> tuple[Trip, QuerySet[StopTime], list[StopNT], list[ShapeSequenceNT]]:
@@ -85,6 +103,9 @@ def transform_rt_vehicle_data(carrier:str, data: dict) -> dict:
             
             raise ValueError("No next stop found in 25m of shape sequence")
         
+        if not ensure_vehicle_has_started(trip_id):
+            return None
+        
         trip, stop_times, stops_location, shape_sequence = get_data_for_trip(trip_id)
         nearest_shape_point = get_nearest_shape_p_nr(self_location, shape_sequence)
         shape_sequence = shape_sequence[nearest_shape_point:]
@@ -108,10 +129,10 @@ def transform_rt_vehicle_data(carrier:str, data: dict) -> dict:
             stop_time_updates.append({
                 "stop_id": stop_time.stop.stop_id,
                 "new_time": new_time
-            })
-            
-        return stop_time_updates   
-     
+            })            
+        return stop_time_updates
+
+
     def transform_wkd_st_updates(st_updates: list[dict]):
         new_updates = list()
         for st_update in st_updates:

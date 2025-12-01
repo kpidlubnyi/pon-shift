@@ -8,27 +8,27 @@ def find_bike_stations_nearby(location: tuple[float, float], radius: int = 200, 
 
         if tags and 'access' in tags.keys():
             return True if tags['access'] == 'private' else False
-        
+
         return False
-        
+
     def add_coordinates_to_way_station(station: dict) -> tuple[float, float]:
         min_lat, min_lon, max_lat, max_lon = station.get('bounds').values()
         station['lat'] = (min_lat + max_lat) / 2.0
-        station['lon'] = (min_lon + max_lon) / 2.0 
+        station['lon'] = (min_lon + max_lon) / 2.0
         return station
-    
+
     def filter_station_data(station: dict) -> dict:
         tags: dict = station.get('tags')
 
         if not tags:
             raise ValueError()
-        
+
         capacity = tags.get('capacity')
         covered = tags.get('covered')
 
         if not (capacity and covered):
             raise ValueError()
-        
+
         result = {
             'lat': station.get('lat'),
             'lon': station.get('lon'),
@@ -50,11 +50,11 @@ def find_bike_stations_nearby(location: tuple[float, float], radius: int = 200, 
             out;
         """
     )
-    
+
     response.raise_for_status()
     data = response.json().get('elements')
     stations = []
-    
+
     for station in data:
         if is_private(station):
             continue
@@ -66,7 +66,7 @@ def find_bike_stations_nearby(location: tuple[float, float], radius: int = 200, 
             station = filter_station_data(station)
         except:
             continue
-        
+
         station_location = (station['lat'], station['lon'])
         route = calculate_simple_distance([location, station_location])
         station['distance'] = route
@@ -78,7 +78,7 @@ def find_bike_stations_nearby(location: tuple[float, float], radius: int = 200, 
     for station in stations:
         station_location = (station['lat'], station['lon'])
         route_to_station = get_shortest_route(location, station_location)
-        station['distance'] = round(calculate_simple_distance(route_to_station), 3) 
-    
+        station['distance'] = round(calculate_simple_distance(route_to_station), 3)
+
     stations = sorted(stations,key=lambda x: x['distance'])
     return stations
