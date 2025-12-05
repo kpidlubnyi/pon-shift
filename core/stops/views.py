@@ -12,35 +12,21 @@ from .serializers import *
 class AllStopsView(APIView):
     def get(self, request):
         stops = get_stops()
-        return JsonResponse({'stops': stops})
+        return JsonResponse({'stops': stops}, status=status.HTTP_200_OK)
     
 
 class StopsView(APIView):
-    def get(self, request, stop_name):
-        stops = get_stops(stop_name=stop_name)
+    def get(self, request, stop_name_or_id):
+        try:
+            stops = get_stops(stop_name=stop_name_or_id)
+            assert len(stops)
+            return JsonResponse({'stops':stops})
+        except:
+            stop = get_stop(stop_name_or_id)
+            return JsonResponse(stop, status=status.HTTP_200_OK)
 
-        if len(stops) == 1:
-            return StopView.get(self, request, stop_name)
 
-        return JsonResponse({'stops':stops})
-    
-
-class StopView(APIView):
-    def get(self, request, stop_name, stop_code=None):
-        stop = get_stops(stop_name=stop_name, stop_code=stop_code)[0]
-        stop_id = stop['stop_id']
-        stoptime_objs = StopTime.objects.filter(stop_id=stop_id)
-        carrier_code = stop['carrier']['carrier_code']
-        recent_trips = get_recent_trips(carrier_code, stoptime_objs)
-
-        response = {
-            'stop': stop,
-            'recent_trips': recent_trips
-        }
-
-        return JsonResponse(response, status=status.HTTP_200_OK)
-
-class NearestStops(APIView):
+class NearestStopsView(APIView):
     def get(self, request):
         params = NearestStopsQueryParamsSerializer(data=request.query_params)
             
@@ -58,7 +44,5 @@ class NearestStops(APIView):
         response = {
             'nearest_stops': nearest_stops
         }
-        return JsonResponse(
-            response,
-            status=status.HTTP_200_OK
-            )
+
+        return JsonResponse(response,status=status.HTTP_200_OK)

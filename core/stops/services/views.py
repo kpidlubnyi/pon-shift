@@ -149,6 +149,25 @@ def extended_info(stop: dict) -> tuple[list[str], str]:
     return stop
 
 
+def get_stop(stop_id: str) -> dict:
+    try:
+        stop = Stop.objects.get(stop_id=stop_id)
+        stop = StopBriefSerializer(stop).data
+        stop = extended_info(stop)
+
+        stoptime_objs = StopTime.objects.filter(stop_id=stop_id)
+        carrier_code = stop['carrier']['carrier_code']
+        recent_trips = get_recent_trips(carrier_code, stoptime_objs)
+
+        return {
+            'stop': stop,
+            'recent_trips': recent_trips
+        }
+
+    except:
+        raise StopNotFoundError(f"Stop with id '{stop_id}' for '{carrier_code}' carrier wasn't found!")
+    
+
 def get_stops(**filters) -> list[dict]:
     try:
         if filters:
