@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from common.models.common import *
 from .services.views import *
 from .serializers import *
+from .services.scraper import *
 
 
 class AllStopsView(APIView):
@@ -46,3 +47,21 @@ class NearestStopsView(APIView):
         }
 
         return JsonResponse(response,status=status.HTTP_200_OK)
+
+
+class StopRouteScheduleView(APIView):
+    def get(self, request, stop_id):
+        params = StopRouteScheduleQueryParamsSerializer(data=request.query_params)
+            
+        if not params.is_valid():
+            raise ValidationError(params.errors)
+        
+        date = params['date'].value        
+        route = params['route'].value
+
+        route_schedule = get_route_schedule(stop_id, date, route)        
+
+        return JsonResponse(route_schedule)
+        
+
+        

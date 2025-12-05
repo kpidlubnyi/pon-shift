@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "beautifulsoup4>=4.14.3",
     "channels>=4.3.2",
     "coverage>=7.10.6",
     "django>=5.2.5",
@@ -19,6 +20,7 @@ dependencies = [
     "grpcio-tools>=1.75.0",
     "gunicorn>=23.0.0",
     "kombu>=5.5.4",
+    "lxml>=6.0.2",
     "pandas>=2.3.2",
     "polyline>=2.0.3",
     "protobuf>=6.32.1",

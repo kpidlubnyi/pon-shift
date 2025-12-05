@@ -10,8 +10,10 @@ from common.services.common import *
 from common.models.common import *
 from Routes.services.views import *
 from Routes.serializers import *
+
 from ..exceptions import *
 from ..serializers import *
+from .scraper import *
 
 
 
@@ -181,3 +183,73 @@ def get_stops(**filters) -> list[dict]:
         raise StopNotFoundError(**filters)
 
     return sorted(stops, key=lambda x: x['stop_name']) 
+
+
+def get_schedule(soup:BeautifulSoup) -> dict:
+    def process_tt_symbols(tt_symbols):
+        if not tt_symbols:
+            return None
+        else:
+            return [
+                HIGH_FLEET_ANNOTATION
+                if symbol.strip() == HIGH_FLEET_SYMBOL
+                else symbol.strip()
+                for symbol in tt_symbols
+            ]
+
+    def process_tt_min(tt_min):
+        tt_min = tt_min[:-1] if tt_min[-1] == ',' else tt_min
+        return tt_min.split(':')[1]
+
+    def process_tt_h_min(tt_h_min):
+        tt_time, tt_symbols = tt_h_min.split(' ', maxsplit=1)
+        
+        tt_time = process_tt_min(tt_time)
+        tt_symbols = process_tt_symbols(tt_symbols)
+
+        return {
+            'minute': tt_time,
+            'symbols': tt_symbols
+        }
+    
+    def process_tt_hours(tt_hour):
+        tt_h_name = tt_hour.find('div', class_='timetable-time-hour-name').text        
+        
+        tt_h_mins = tt_hour.find_all('a', class_=re.compile(r'timetable-minute'))
+        tt_h_mins = [tt.attrs['aria-label'] for tt in tt_h_mins]
+        tt_h_mins = [process_tt_h_min(tt) for tt in tt_h_mins]
+        
+        return {
+            'hour': tt_h_name,
+            'minutes': tt_h_mins
+        }
+    
+    def process_tt_ann(tt_ann):
+            symbol = tt_ann.find('div', class_='timetable-annotations-symbol-key')
+            symbol = HIGH_FLEET_SYMBOL if symbol.find('i') else symbol.text
+
+            desc = tt_ann.find('div', class_='timetable-annotations-symbol-val').text
+            
+            return {
+                'symbol': symbol,
+                'description': desc
+            }
+
+    tt_times = soup.find('ul', class_='timetable-time')
+    tt_anotations = soup.find_all('div', class_='timetable-annotations-symbol')
+
+    tt_hours = tt_times.find_all('a', class_='timetable-time-hour')
+    tt_times = [process_tt_hours(tt_hour) for tt_hour in tt_hours] 
+    
+    tt_anotations = [process_tt_ann(tt_ann) for tt_ann in tt_anotations]
+
+    return {
+        'timetable': tt_times,
+        'annotations': tt_anotations
+    }
+    
+
+def get_route_schedule(stop_id:str, date:str, route:str) -> dict:
+    is_for_train = True if len(stop_id) == 4 else False
+    soup = get_soup_for_route(date, route, stop_id, is_for_train)
+    return get_schedule(soup)

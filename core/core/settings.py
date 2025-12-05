@@ -40,6 +40,8 @@ ONESTOP_IDS.update({
 
 SERVED_FEEDS = list(ONESTOP_IDS.keys())
 
+SCRAPER_USER_AGENT=getenv('SCRAPER_USER_AGENT')
+
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']

@@ -10,6 +10,7 @@ from django.core.management import CommandError
 from django_celery_beat.models import PeriodicTask, CrontabSchedule, IntervalSchedule
 
 from common.services.redis import *
+from common.models import Route
 from .download import get_from_feed
 from .db_operations import import_to_staging, refresh_trip_stops
 
@@ -62,6 +63,19 @@ def notify_about_new_map():
     """Notify both ORS and OTP watchdogs about new map availability."""
     create_flag_file('otp', 'map')
     create_flag_file('ors', 'map')
+
+
+def cache_carriers_info():
+    def cache_routes_set_info(carrier_code:str):
+        available_routes = Route.objects \
+            .filter(carrier__carrier_code=carrier_code) \
+            .values_list('route_id', flat=True)
+
+        key = f'{carrier_code}_ROUTES_SET'
+        return recreate_redis_set(key, *available_routes)
+
+    for carrier_code in settings.ALLOWED_CARRIERS:
+        assert cache_routes_set_info(carrier_code)
 
 
 def check_task_availability(carrier: str) -> bool:

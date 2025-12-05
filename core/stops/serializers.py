@@ -1,6 +1,8 @@
+from django.utils import timezone as tz
 from rest_framework import serializers
 
 from common.models.common import *
+from common.services.redis import *
 
 
 class NearestStopsQueryParamsSerializer(serializers.Serializer):
@@ -19,6 +21,22 @@ class NearestStopsQueryParamsSerializer(serializers.Serializer):
         max_value = 3,
         default = 1
     )
+
+
+class StopRouteScheduleQueryParamsSerializer(serializers.Serializer):
+    route = serializers.CharField(required=True)
+    date = serializers.DateField(
+        default=tz.localdate,
+        input_formats=['%Y-%m-%d']
+    )
+
+    # route schedules are only available for WTP
+    def validate_route(self, value):
+        carrier = value.split(':')[0]
+        if is_in_redis_set(f'WTP_ROUTES_SET', value):   
+            return value    
+        else:
+            raise serializers.ValidationError(f"Route '{value} wasn't found for WTP carrier!'")
 
 
 class CarrierSerializer(serializers.ModelSerializer):

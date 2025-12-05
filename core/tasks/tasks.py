@@ -68,7 +68,9 @@ def update_gtfs(feed, carrier: str):
         remove_from_redis(f'{carrier}_sha1')
 
     backup_from_regular_tables()
-    logger.info('The backup was successful!')
+    logger.info('The backup was successful! Updating carriers cache...')
+    cache_carriers_info()
+    logger.info('Updated! Updating GTFS was finished successfuly!')
     gc.collect()
         
 @shared_task

@@ -35,7 +35,7 @@ def redis_operation(func):
         except redis.TimeoutError as e:
             return None
         except Exception as e:
-            raise
+            raise Exception(e)
     return wrapper
 
 
@@ -54,7 +54,7 @@ def set_in_redis(key:str, value:str):
 
 @redis_operation     
 def remove_from_redis(key):
-    if get_from_redis(key):
+    if redis_client.type(key):
         redis_client.delete(key)
 
 
@@ -74,3 +74,14 @@ def get_hash_from_redis(carrier:str, suffix:str = 'sha1'):
         return get_hash_from_redis(carrier, suffix)
     else:
         return hash_from_redis
+
+
+@redis_operation
+def recreate_redis_set(key: str, *values) -> bool:
+    remove_from_redis(key)
+    return bool(redis_client.sadd(key, *values))
+
+
+@redis_operation
+def is_in_redis_set(key: str, value: str) -> bool:
+    return bool(redis_client.sismember(key, value))

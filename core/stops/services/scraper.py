@@ -1,0 +1,38 @@
+import re
+import requests
+from bs4 import BeautifulSoup
+
+from django.conf import settings
+
+
+HEADERS = {
+    "User-Agent": settings.SCRAPER_USER_AGENT,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Connection": "keep-alive",
+    "Referer": "https://google.com",
+    "Upgrade-Insecure-Requests": "1",
+}
+
+HIGH_FLEET_SYMBOL = 'kurs pojazdem z wysoką podłogą'
+HIGH_FLEET_ANNOTATION = '[]'
+
+
+def get_soup_for_route(date:str, route:str, stop_id:str, is_for_train: bool = False):
+    url = 'https://www.wtp.waw.pl/rozklady-jazdy'
+
+    stop_params = {'wtp_st': stop_id[:4]}
+    stop_params['wtp_pt'] = '80' if is_for_train else stop_id[4:6]
+    route = route.split(':')[1]
+    
+    params = {
+        'wtp_dt':date, 
+        'wtp_md':'5', 
+        'wtp_ln':route, 
+        'wtp_lm': '1',
+    }
+    params.update(stop_params)
+
+    response = requests.get(url,headers=HEADERS, params=params)
+    soup = BeautifulSoup(response.text, 'lxml')
+    return soup
