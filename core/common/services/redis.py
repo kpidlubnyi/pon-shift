@@ -35,29 +35,42 @@ def redis_operation(func):
         except redis.TimeoutError as e:
             return None
         except Exception as e:
-            return None
+            raise
     return wrapper
+
+
+@redis_operation
+def get_from_redis(key: str):
+    return redis_client.get(key)
+
+
+@redis_operation
+def set_in_redis(key:str, value:str):
+    try:
+        assert redis_client.set(key, value)
+    except Exception as e:
+        raise Exception(f'Error while setting in Redis: {e}')
+    
+
+@redis_operation     
+def remove_from_redis(key):
+    if get_from_redis(key):
+        redis_client.delete(key)
 
 
 @redis_operation
 def set_hash_in_redis(hash_to_redis:str, carrier:str, suffix:str = 'sha1'):
     key = f'{carrier}_{suffix}'
-    return redis_client.set(key, hash_to_redis)
+    set_in_redis(key, hash_to_redis)
 
 
 @redis_operation
 def get_hash_from_redis(carrier:str, suffix:str = 'sha1'):
     key = f'{carrier}_{suffix}'
-    hash_from_redis = redis_client.get(key)
+    hash_from_redis = get_from_redis(key)
 
     if not hash_from_redis:
         set_hash_in_redis('initial value', carrier, suffix)
         return get_hash_from_redis(carrier, suffix)
     else:
         return hash_from_redis
-
-
-@redis_operation     
-def remove_from_redis(key):
-    if redis_client.get(key):
-        redis_client.delete(key)
