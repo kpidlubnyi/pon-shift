@@ -59,14 +59,14 @@ INSTALLED_APPS = [
 
     'common',
     'tasks',
-    'Stops',
+    'stops',
     'Routes',
     'Bikes',
     'Trips',
 ]
 
 MIDDLEWARE = [
-    #'Stops.middleware.ProcessExceptionsMiddleware',
+    #'stops.middleware.ProcessExceptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

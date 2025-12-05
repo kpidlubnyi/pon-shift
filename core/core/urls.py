@@ -8,7 +8,7 @@ def health_check(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('stops/', include('Stops.urls')),
+    path('stops/', include('stops.urls')),
     path('routes/', include('Routes.urls')),
     path('trips/', include('Trips.urls')),
     path('bikes/', include('Bikes.urls')),

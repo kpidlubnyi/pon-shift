@@ -7,7 +7,7 @@ from rest_framework import serializers
 from .serializers import *
 from Trips.services.models import *
 from .models import *
-from Stops.serializers import *
+from stops.serializers import *
 from common.models.common import *
 from common.services.mongo import *
 
