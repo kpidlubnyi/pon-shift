@@ -1,5 +1,4 @@
 from geopy.geocoders import Nominatim
-from logging import getLogger
 import heapq
 
 from django.db.models.manager import BaseManager
@@ -17,7 +16,6 @@ from .scraper import *
 
 
 
-logger = getLogger(__name__)
 
 
 def get_location(address: str) -> tuple[float ,float]:
@@ -192,10 +190,10 @@ def get_schedule(soup:BeautifulSoup) -> dict:
             return None
         else:
             return [
-                HIGH_FLEET_ANNOTATION
-                if symbol.strip() == HIGH_FLEET_SYMBOL
+                HIGH_FLEET_SYMBOL
+                if symbol.strip() == HIGH_FLEET_ANNOTATION
                 else symbol.strip()
-                for symbol in tt_symbols
+                for symbol in tt_symbols.split(',')
             ]
 
     def process_tt_min(tt_min):
@@ -238,12 +236,11 @@ def get_schedule(soup:BeautifulSoup) -> dict:
 
     tt_times = soup.find('ul', class_='timetable-time')
     tt_anotations = soup.find_all('div', class_='timetable-annotations-symbol')
-
-    tt_hours = tt_times.find_all('a', class_='timetable-time-hour')
-    tt_times = [process_tt_hours(tt_hour) for tt_hour in tt_hours] 
+    tt_hours = tt_times.find_all('li', class_='timetable-time-hour')
+    tt_times = [process_tt_hours(tt_hour) for tt_hour in tt_hours]
     
-    tt_anotations = [process_tt_ann(tt_ann) for tt_ann in tt_anotations]
-
+    tt_anotations = [process_tt_ann(tt_ann) for tt_ann in tt_anotations]    
+    
     return {
         'timetable': tt_times,
         'annotations': tt_anotations

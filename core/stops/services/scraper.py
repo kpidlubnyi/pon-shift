@@ -13,8 +13,8 @@ HEADERS = {
     "Upgrade-Insecure-Requests": "1",
 }
 
-HIGH_FLEET_SYMBOL = 'kurs pojazdem z wysoką podłogą'
-HIGH_FLEET_ANNOTATION = '[]'
+HIGH_FLEET_SYMBOL = '[]'
+HIGH_FLEET_ANNOTATION = 'kurs pojazdem z wysoką podłogą'
 
 
 def get_soup_for_route(date:str, route:str, stop_id:str, is_for_train: bool = False):
