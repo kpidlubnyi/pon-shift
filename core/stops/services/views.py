@@ -100,9 +100,10 @@ def get_available_routes(stoptime_objs: BaseManager[StopTime]) -> list[dict]:
     return RouteBriefSerializer(available_routes, many=True).data
 
 
-def get_recent_trips(carrier:str, stoptime_objs: BaseManager[StopTime], n: int = 10, datetime = tz.localtime(tz.now())):
-    day_of_week = datetime.isoweekday()
-    date, time = datetime.date(), datetime.time()
+def get_recent_trips(carrier:str, stoptime_objs: BaseManager[StopTime], n: int = 10, dt: tz.datetime = None):
+    dt = tz.localtime() if not dt else dt
+    day_of_week = dt.isoweekday()
+    date, time = dt.date(), dt.time()
 
     match carrier:
         case 'WTP':
@@ -136,7 +137,7 @@ def add_carrier_data(stop: dict):
     carrier = stop['carrier']
     return CarrierSerializer(carrier).data
 
-def extended_info(stop: dict) -> tuple[list[str], str]:
+def extend_stop_info(stop: dict) -> tuple[list[str], str]:
     stop_id = intercept_bad_stop_id(stop['stop_id'])
 
     if stop_id == '7014M:P1':
@@ -155,7 +156,7 @@ def get_stop(stop_id: str) -> dict:
     try:
         stop = Stop.objects.get(stop_id=stop_id)
         stop = StopBriefSerializer(stop).data
-        stop = extended_info(stop)
+        stop = extend_stop_info(stop)
 
         stoptime_objs = StopTime.objects.filter(stop_id=stop_id)
         carrier_code = stop['carrier']['carrier_code']
@@ -175,7 +176,7 @@ def get_stops(**filters) -> list[dict]:
         if filters:
             stops = Stop.objects.filter(**filters)
             stops = StopBriefSerializer(stops, many=True).data
-            stops = [extended_info(stop) for stop in stops]
+            stops = [extend_stop_info(stop) for stop in stops]
         else:
             stops = Stop.objects.all().distinct('stop_name')
             stops = StopBriefSerializer(stops, many=True).data
