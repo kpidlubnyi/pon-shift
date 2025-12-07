@@ -84,6 +84,20 @@ def cache_carriers_info():
         assert cache_routes_set_info(carrier_code)
 
 
+def clear_gtfs_cache(carrier:str):
+    try:
+        keys_to_delete = ['STOP_LIST', f'{carrier}_ROUTES_SET']
+
+        if carrier == 'WTP':
+            keys_to_delete += list(get_redis_keys_by_regexp('WTP_ROUTE_SCHEDULE_*'))
+            
+        remove_from_redis(*keys_to_delete)
+        logger.info(f"Cleared {len(keys_to_delete)} GTFS cache keys for {carrier}")
+        
+    except Exception as e:
+        logger.error(f'Error while clearing cache from redis: {e}')
+
+
 def check_task_availability(carrier: str) -> bool:
     task_name = f'GTFS_UPDATING_{carrier}'
     

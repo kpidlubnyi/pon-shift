@@ -40,6 +40,7 @@ def check_gtfs_updates():
             if not was_any_updated:
                 was_any_updated = True
                 notify_about_new_gtfs()
+                clear_gtfs_cache(carrier)
 
             logger.info(f"There is new GTFS for {carrier} carrier!")
             update_gtfs.apply_async(args=[feed, carrier])

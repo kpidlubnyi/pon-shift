@@ -1,5 +1,7 @@
 import redis
 import json
+from typing import Generator
+
 from django.conf import settings
 
 
@@ -43,6 +45,11 @@ def redis_operation(func):
 @redis_operation
 def get_from_redis(key:str) -> str:
     return redis_client.get(key)
+
+
+@redis_operation
+def get_redis_keys_by_regexp(pattern: str) -> Generator[str, None, None]:
+    return (key.decode() for key in redis_client.scan_iter(match=pattern))
 
 
 @redis_operation
@@ -97,9 +104,8 @@ def save_stops_in_redis(stops:list[dict]) -> None:
 
 
 @redis_operation     
-def remove_from_redis(key:str) -> None:
-    if redis_client.type(key):
-        redis_client.delete(key)
+def remove_from_redis(*keys:str) -> None:
+    redis_client.delete(*keys)
 
 
 @redis_operation
