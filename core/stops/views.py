@@ -59,9 +59,6 @@ class StopRouteScheduleView(APIView):
         date = params['date'].value        
         route = params['route'].value
 
-        route_schedule = get_route_schedule(stop_id, date, route)        
+        route_schedule = get_stop_route_schedule(stop_id, date, route)
 
         return JsonResponse(route_schedule)
-        
-
-        

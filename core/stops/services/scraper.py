@@ -17,18 +17,16 @@ HIGH_FLEET_SYMBOL = '[]'
 HIGH_FLEET_ANNOTATION = 'kurs pojazdem z wysoką podłogą'
 
 
-def get_soup_for_route(date:str, route:str, stop_id:str, is_for_train: bool = False):
+def get_soup_for_route(stop_id:str, date:str, route:str):
     url = 'https://www.wtp.waw.pl/rozklady-jazdy'
 
     stop_params = {'wtp_st': stop_id[:4]}
-    stop_params['wtp_pt'] = '80' if is_for_train else stop_id[4:6]
+    stop_params['wtp_pt'] = '80' if len(stop_id) == 4 else stop_id[4:6]  # WTP stops for trains have 4-digit stop_id
     route = route.split(':')[1]
     
     params = {
-        'wtp_dt':date, 
-        'wtp_md':'5', 
-        'wtp_ln':route, 
-        'wtp_lm': '1',
+        'wtp_dt':date, 'wtp_md':'5', 
+        'wtp_ln':route, 'wtp_lm': '1',
     }
     params.update(stop_params)
 

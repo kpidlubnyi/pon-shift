@@ -1,4 +1,5 @@
 import redis
+import json
 from django.conf import settings
 
 
@@ -40,32 +41,60 @@ def redis_operation(func):
 
 
 @redis_operation
-def get_from_redis(key: str):
+def get_from_redis(key:str) -> str:
     return redis_client.get(key)
 
 
 @redis_operation
-def set_in_redis(key:str, value:str):
+def get_json_data_from_redis(key:str) -> dict | None:
+    data = get_from_redis(key)
+    return json.loads(data) if data else None
+
+
+@redis_operation
+def get_stop_route_schedule_from_redis(stop_id:str, date:str, route:str) -> dict | None:
+    carrier, route_id = route.split(':')
+    key = f'{carrier}_ROUTE_SCHEDULE_{stop_id}_{route_id}_{date}'
+
+    if schedule := get_json_data_from_redis(key):
+        return schedule
+    return None
+
+
+@redis_operation
+def set_in_redis(key:str, value:str) -> None:
     try:
         assert redis_client.set(key, value)
     except Exception as e:
         raise Exception(f'Error while setting in Redis: {e}')
     
 
+@redis_operation
+def set_json_data_in_redis(key:str, data:dict) -> None:
+    set_in_redis(key, json.dumps(data))
+    
+
+@redis_operation
+def set_stop_route_schedule_in_redis(data: dict, stop_id:str, date:str, route:str) -> None:
+    carrier, route_id = route.split(':')
+    key = f'{carrier}_ROUTE_SCHEDULE_{stop_id}_{route_id}_{date}'
+    set_json_data_in_redis(key, data)
+
+
 @redis_operation     
-def remove_from_redis(key):
+def remove_from_redis(key:str) -> None:
     if redis_client.type(key):
         redis_client.delete(key)
 
 
 @redis_operation
-def set_hash_in_redis(hash_to_redis:str, carrier:str, suffix:str = 'sha1'):
+def set_hash_in_redis(hash_to_redis:str, carrier:str, suffix:str = 'sha1') -> None:
     key = f'{carrier}_{suffix}'
     set_in_redis(key, hash_to_redis)
 
 
 @redis_operation
-def get_hash_from_redis(carrier:str, suffix:str = 'sha1'):
+def get_hash_from_redis(carrier:str, suffix:str = 'sha1') -> str:
     key = f'{carrier}_{suffix}'
     hash_from_redis = get_from_redis(key)
 

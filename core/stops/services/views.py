@@ -184,7 +184,7 @@ def get_stops(**filters) -> list[dict]:
     return sorted(stops, key=lambda x: x['stop_name']) 
 
 
-def get_schedule(soup:BeautifulSoup) -> dict:
+def form_schedule_from_soup(soup:BeautifulSoup) -> dict:
     def process_tt_symbols(tt_symbols):
         if not tt_symbols:
             return None
@@ -247,7 +247,11 @@ def get_schedule(soup:BeautifulSoup) -> dict:
     }
     
 
-def get_route_schedule(stop_id:str, date:str, route:str) -> dict:
-    is_for_train = True if len(stop_id) == 4 else False
-    soup = get_soup_for_route(date, route, stop_id, is_for_train)
-    return get_schedule(soup)
+def get_stop_route_schedule(stop_id, date, route) -> dict:
+    if cached := get_stop_route_schedule_from_redis(stop_id, date, route):
+        return cached
+
+    soup = get_soup_for_route(stop_id, date, route)
+    schedule = form_schedule_from_soup(soup)
+    set_stop_route_schedule_in_redis(schedule, stop_id, date, route)
+    return schedule
