@@ -170,18 +170,26 @@ def get_stop(stop_id: str) -> dict:
     
 
 def get_stops(**filters) -> list[dict]:
-    try:
-        if filters:
-            stops = Stop.objects.filter(**filters)
-            stops = StopBriefSerializer(stops, many=True).data
-            stops = [extend_stop_info(stop) for stop in stops]
-        else:
-            stops = Stop.objects.all().distinct('stop_name')
-            stops = StopBriefSerializer(stops, many=True).data
-    except:
-        raise StopNotFoundError(**filters)
+    def get_stop_list(**filters) -> list[dict]:
+        try:
+            if filters:
+                stops = Stop.objects.filter(**filters)
+                stops = StopBriefSerializer(stops, many=True).data
+                stops = [extend_stop_info(stop) for stop in stops]
+            else:
+                stops = Stop.objects.all().distinct('stop_name')
+                stops = StopBriefSerializer(stops, many=True).data
+        except:
+            raise StopNotFoundError(**filters)
 
-    return sorted(stops, key=lambda x: x['stop_name']) 
+        return sorted(stops, key=lambda x: x['stop_name'])
+
+    if cached:= get_stop_list_from_redis():
+        return cached
+    else:
+        stops = get_stop_list()
+        save_stops_in_redis(stops)
+        return stops
 
 
 def form_schedule_from_soup(soup:BeautifulSoup) -> dict:
