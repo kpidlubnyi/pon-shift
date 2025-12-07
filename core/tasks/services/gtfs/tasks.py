@@ -67,9 +67,15 @@ def notify_about_new_map():
 
 def cache_carriers_info():
     def cache_routes_set_info(carrier_code:str):
-        available_routes = Route.objects \
-            .filter(carrier__carrier_code=carrier_code) \
-            .values_list('route_id', flat=True)
+        available_routes = list(
+            Route.objects
+                .filter(carrier__carrier_code=carrier_code)
+                .values_list('route_id', flat=True)
+        )
+
+        if not available_routes:
+            logger.warning(f"There is no routes for '{carrier_code}' carrier. Ignore it if it's a first cycle of GTFS updating.")
+            return True
 
         key = f'{carrier_code}_ROUTES_SET'
         return recreate_redis_set(key, *available_routes)
