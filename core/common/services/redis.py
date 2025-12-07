@@ -2,6 +2,8 @@ import redis
 import json
 from django.conf import settings
 
+from tasks.services.gtfs.models import split_value_with_carrier_prefix
+
 
 try:
     redis_pool = redis.ConnectionPool.from_url(
@@ -53,7 +55,7 @@ def get_json_data_from_redis(key:str) -> dict | None:
 
 @redis_operation
 def get_stop_route_schedule_from_redis(stop_id:str, date:str, route:str) -> dict | None:
-    carrier, route_id = route.split(':')
+    carrier, route_id = split_value_with_carrier_prefix(route)
     key = f'{carrier}_ROUTE_SCHEDULE_{stop_id}_{route_id}_{date}'
 
     if schedule := get_json_data_from_redis(key):
@@ -76,7 +78,7 @@ def set_json_data_in_redis(key:str, data:dict) -> None:
 
 @redis_operation
 def set_stop_route_schedule_in_redis(data: dict, stop_id:str, date:str, route:str) -> None:
-    carrier, route_id = route.split(':')
+    carrier, route_id = split_value_with_carrier_prefix(route)
     key = f'{carrier}_ROUTE_SCHEDULE_{stop_id}_{route_id}_{date}'
     set_json_data_in_redis(key, data)
 

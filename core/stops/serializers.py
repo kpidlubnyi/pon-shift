@@ -32,7 +32,6 @@ class StopRouteScheduleQueryParamsSerializer(serializers.Serializer):
 
     # route schedules are only available for WTP
     def validate_route(self, value):
-        carrier = value.split(':')[0]
         if is_in_redis_set(f'WTP_ROUTES_SET', value):   
             return value    
         else:

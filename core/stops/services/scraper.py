@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 
 from django.conf import settings
 
+from tasks.services.gtfs.models import remove_carrier_prefix
+
 
 HEADERS = {
     "User-Agent": settings.SCRAPER_USER_AGENT,
@@ -22,11 +24,11 @@ def get_soup_for_route(stop_id:str, date:str, route:str):
 
     stop_params = {'wtp_st': stop_id[:4]}
     stop_params['wtp_pt'] = '80' if len(stop_id) == 4 else stop_id[4:6]  # WTP stops for trains have 4-digit stop_id
-    route = route.split(':')[1]
+    route_id = remove_carrier_prefix(route)
     
     params = {
         'wtp_dt':date, 'wtp_md':'5', 
-        'wtp_ln':route, 'wtp_lm': '1',
+        'wtp_ln':route_id, 'wtp_lm': '1',
     }
     params.update(stop_params)
 
