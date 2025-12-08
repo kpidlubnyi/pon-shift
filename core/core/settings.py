@@ -38,6 +38,12 @@ ONESTOP_IDS.update({
     'WKD_RT_V': getenv('WKD_RT_ONESTOP_ID'),
 })
 
+CARRIERS_WITH_RT_VEHICLES_DATA = list({
+    val.split('_')[0] 
+    for val in ONESTOP_IDS.keys() 
+    if 'RT_V' in val 
+})
+
 SERVED_FEEDS = list(ONESTOP_IDS.keys())
 
 SCRAPER_USER_AGENT=getenv('SCRAPER_USER_AGENT')

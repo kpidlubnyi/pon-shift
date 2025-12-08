@@ -2,6 +2,8 @@ from pymongo import MongoClient
 
 from django.conf import settings
 
+from tasks.services.gtfs.models import split_value_with_carrier_prefix
+
 
 class MongoConnection:
     def __init__(self):
@@ -52,10 +54,13 @@ def prune_underscore_id(doc: dict) -> dict:
 
 
 def get_rt_vehicle_data(trip_id:str):
-    carrier_code, trip_id = trip_id.split(':', maxsplit=1)
+    carrier_code, trip_id = split_value_with_carrier_prefix(trip_id)
 
     if carrier_code not in settings.ALLOWED_CARRIERS:
         raise ValueError('Carrier code not in allowed carriers!')
+    
+    if carrier_code not in settings.CARRIERS_WITH_RT_VEHICLES_DATA:
+        return None
     
     collection_name = f'{carrier_code}_RT_V'
     
@@ -70,7 +75,7 @@ def get_rt_vehicle_data(trip_id:str):
         if not doc:
             raise ValueError(f"There is no realtime data for vehicle with trip id '{trip_id}'!")
         
-        doc = prune_underscore_id(doc) if doc else None
+        doc = prune_underscore_id(doc)
         return carrier_code, doc
 
 
