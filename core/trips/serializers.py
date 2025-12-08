@@ -5,7 +5,7 @@ from django.utils import timezone as tz
 from rest_framework import serializers
 
 from .serializers import *
-from Trips.services.models import *
+from trips.services.models import *
 from .models import *
 from stops.serializers import *
 from common.models.common import *

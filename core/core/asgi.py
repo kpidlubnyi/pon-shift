@@ -5,7 +5,7 @@ from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 
-from Trips import routing as trips_ws
+from trips import routing as trips_ws
 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')

@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('Trips', '0001_unlogged_tripstops'),
+        ('trips', '0001_unlogged_tripstops'),
     ]
 
     operations = [

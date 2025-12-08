@@ -1,6 +1,6 @@
 from common.models.common import *
 from Routes.serializers import *
-from Trips.serializers import *
+from trips.serializers import *
 
 
 def process_trip_pattern(trip_response: dict):

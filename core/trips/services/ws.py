@@ -7,7 +7,7 @@ from django.utils import timezone as tz
 from common.collections import NestedDict
 from common.models import *
 from common.services.gtfs import *
-from Trips.models import TripStops
+from trips.models import TripStops
 from tasks.services.gtfs.models import add_carrier_prefix
 from Routes.services.views import LocationPoint, calculate_simple_distance
 

@@ -3,7 +3,7 @@ import logging
 
 from django.db import transaction, close_old_connections, reset_queries
 
-from Trips.models import *
+from trips.models import *
 from .models import *
 from .process import *
 
