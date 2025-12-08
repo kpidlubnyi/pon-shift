@@ -84,7 +84,7 @@ class SearchedTripsSerializer(serializers.Serializer):
             if len(visit_point) != 3:
                 raise serializers.ValidationError(
                     """
-                    Every via visit point should have 3 values: 
+                    Each via visit point should have 3 values: 
                     lat, lon and duration of being there!
                     """)
             self._validate_cooordinate(visit_point[0])
@@ -101,6 +101,7 @@ class SearchedTripsSerializer(serializers.Serializer):
         
         return value
 
+
 class BaseTripSerializer(serializers.ModelSerializer):
     route_name = serializers.SerializerMethodField()
     has_realtime = serializers.SerializerMethodField()
@@ -112,7 +113,6 @@ class BaseTripSerializer(serializers.ModelSerializer):
         if get_rt_vehicle_data(obj.trip_id):
             return True
         return False
-
 
     class Meta:
         model = Trip
@@ -168,8 +168,8 @@ class TripDetailsSerializer(BaseTripSerializer, serializers.ModelSerializer):
     stops = serializers.SerializerMethodField()
 
     def get_stops(self, obj:Trip):
-        stop_times_obj = StopTime.objects.filter(trip_id=obj.trip_id)
-        stops = [StopTimeSerializer(stop).data for stop in stop_times_obj]
+        stop_time_objs = StopTime.objects.filter(trip_id=obj.trip_id)
+        stops = StopTimeSerializer(stop_time_objs, many=True).data
         return stops
     
     class Meta(BaseTripSerializer.Meta):

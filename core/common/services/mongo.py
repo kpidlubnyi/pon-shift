@@ -45,13 +45,16 @@ def replace_data(collection: str, data: list[dict]) -> None:
         db[collection].insert_many(data)
 
 
-def prune_underscore_id(doc: dict) -> dict:
-    try:
-        del doc['_id']
-        return doc
-    except Exception as e:
-        raise Exception(f'Error while pruning mongo document: {e}')
-
+def prune_underscore_id(doc: dict | None) -> dict | None:
+    if doc:
+        try:
+            del doc['_id']
+            return doc
+        except Exception as e:
+            raise Exception(f'Error while pruning mongo document: {e}')
+    else:
+        return
+    
 
 def get_rt_vehicle_data(trip_id:str):
     carrier_code, trip_id = split_value_with_carrier_prefix(trip_id)
@@ -71,12 +74,9 @@ def get_rt_vehicle_data(trip_id:str):
         }.get(carrier_code)
         
         doc = db[collection_name].find_one({key: trip_id})
-
-        if not doc:
-            raise ValueError(f"There is no realtime data for vehicle with trip id '{trip_id}'!")
-        
         doc = prune_underscore_id(doc)
-        return carrier_code, doc
+
+        return carrier_code, doc if doc else None
 
 
 def get_wtp_alerts() -> list[dict]:

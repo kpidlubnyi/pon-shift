@@ -33,7 +33,7 @@ def add_carrier_prefix(carrier:str, val:str) -> str:
 
 
 def split_value_with_carrier_prefix(val:str) -> tuple[str, str]:
-    return val.split(':')
+    return val.split(':', maxsplit=1)
 
 
 def get_carrier_prefix_from_value(val:str) -> str:
