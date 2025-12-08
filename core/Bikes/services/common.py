@@ -1,6 +1,6 @@
 import requests
 
-from Routes.services.views import *
+from routes.services.views import *
 
 def find_bike_stations_nearby(location: tuple[float, float], radius: int = 200, limit: int = 5):
     def is_private(station):

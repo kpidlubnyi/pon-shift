@@ -1,5 +1,5 @@
 from common.models.common import *
-from Routes.serializers import *
+from routes.serializers import *
 from trips.serializers import *
 
 

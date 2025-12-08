@@ -68,7 +68,7 @@ INSTALLED_APPS = [
     'common',
     'tasks',
     'stops',
-    'Routes',
+    'routes',
     'Bikes',
     'trips',
 ]

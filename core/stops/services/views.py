@@ -7,8 +7,8 @@ from django.utils import timezone as tz
 
 from common.services.common import *
 from common.models.common import *
-from Routes.services.views import *
-from Routes.serializers import *
+from routes.services.views import *
+from routes.serializers import *
 
 from ..exceptions import *
 from ..serializers import *

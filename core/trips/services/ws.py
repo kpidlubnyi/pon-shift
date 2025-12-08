@@ -9,7 +9,7 @@ from common.models import *
 from common.services.gtfs import *
 from trips.models import TripStops
 from tasks.services.gtfs.models import add_carrier_prefix
-from Routes.services.views import LocationPoint, calculate_simple_distance
+from routes.services.views import LocationPoint, calculate_simple_distance
 
 
 AVERAGE_SPEED_KM_H = {
