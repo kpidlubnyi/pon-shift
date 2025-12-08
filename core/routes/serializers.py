@@ -9,7 +9,6 @@ from trips.models import *
 from trips.serializers import *
 
 
-
 class BaseRouteSerializer(serializers.ModelSerializer):
     route_type = serializers.CharField(source='get_route_type_display')
     
@@ -25,42 +24,74 @@ class RouteDetailsSerializer(BaseRouteSerializer, serializers.ModelSerializer):
     all_possible_routes = serializers.SerializerMethodField()
     now_on_track = serializers.SerializerMethodField()
     
-    def get_all_possible_routes(self, obj: Route):
-        routes = {}
-
-        for drctn in {0, 1}:
-            routes_qs = TripStops.objects.filter(route_id=obj.route_id, direction_id=drctn)
+    def get_all_possible_routes(self, obj:Route):
+        def get_main_trip_index(trips:list[dict], seps:list[str], route_l_name:str, direction:int) -> int:
+            for sep in seps:
+                if sep in route_l_name:
+                    from_st, to_st = [st_name.strip() for st_name in route_l_name.split(sep)]
+                    
+                    if direction == 1:
+                        from_st, to_st = to_st, from_st
+                    break
             
-            main_route_qs = (routes_qs
-                .annotate(count_of_uses=Count('trip_id'))
-                .order_by('-count_of_uses')
-                .first()
+            for i, trip in enumerate(trips):
+                trip_from_st = trip['stops'][0]['stop_name'].strip()
+                trip_to_st = trip['stops'][-1]['stop_name'].strip()                
+
+                if from_st == trip_from_st and to_st == trip_to_st:
+                    return i
+
+
+        def get_calculated_main_trip_index(trips_qs:QuerySet[TripStops]) -> int:
+            nonlocal obj, direction
+            main_trip_qs = (
+                TripStops.objects
+                            .filter(route_id=obj.route_id, direction_id=direction)
+                            .annotate(count_of_uses=Count('trip_id'))
+                            .order_by('-count_of_uses')
+                            .first()
+                        )
+            main_trip_stops = main_trip_qs.stop_ids
+
+            for i, trip in enumerate(trips_qs):
+                if main_trip_stops == trip.stop_ids:
+                    return i            
+
+        result = {}
+
+        for direction in {0, 1}:
+            trips_qs = (
+                TripStops.objects
+                    .filter(route_id=obj.route_id, direction_id=direction)
+                    .distinct('stop_ids')
             )
+            trips = TripStopsSerializer(trips_qs, many=True).data
+            
+            route_l_name = obj.route_long_name
+            seps = ['→', '–']
 
-            other_routes_qs = (routes_qs
-                .distinct('stop_ids')
-                .exclude(stop_ids=main_route_qs.stop_ids)
-            ) 
-            main_route = TripStopsSerializer(main_route_qs).data
-            other_routes = TripStopsSerializer(other_routes_qs, many=True).data
+            if any([sep in route_l_name for sep in seps]):
+                main_trip_index = get_main_trip_index(trips, seps, route_l_name, direction)
+            else:
+                main_trip_index = get_calculated_main_trip_index(trips_qs)
+                
+            main_trip = trips.pop(main_trip_index)
+            other_trips = trips
             
-            
-            main_route_stops = set()
             to_fullname = lambda x: f"{x['stop_name']} {x['stop_code']}"
-            for stop in main_route['stops']:
-                main_route_stops.add(to_fullname(stop))
-
-            for route in other_routes:
-                for i, stop in enumerate(route['stops']):
-                    stop['intersection'] = True if to_fullname(stop) in main_route_stops else False
-                    stop['position'] = 'start' if i == 0 else 'end' if i == len(route['stops'])-1 else 'middle' 
+            main_trip_stops = {to_fullname(stop) for stop in main_trip['stops']}
             
-            routes[f'direction_{drctn}'] = {
-                'main_route': main_route,
-                'other_routes': other_routes 
+            for trip in other_trips:
+                for i, stop in enumerate(trip['stops']):
+                    stop['intersection'] = True if to_fullname(stop) in main_trip_stops else False
+                    stop['position'] = 'start' if i == 0 else 'end' if i == len(trip['stops'])-1 else 'middle' 
+            
+            result[f'direction_{direction}'] = {
+                'main_route': main_trip,
+                'other_routes': other_trips 
             }
 
-        return routes
+        return result
     
     def get_trips_for_date(self, obj: Route, date=tz.localdate(tz.now())) -> QuerySet[Trip]:
         trip_filter = Q(route_id=obj.route_id, carrier=obj.carrier)
