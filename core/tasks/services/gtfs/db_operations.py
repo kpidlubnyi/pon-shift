@@ -114,13 +114,12 @@ def toggle_carrier_fk(enable=True):
             ''')
 
 
-def refresh_trip_stops(carrier_code):
-    logger.info("Running TripStops materialized view refresher...")
-    carrier = CarrierStaging.objects.get(carrier_code=carrier_code)
+def refresh_trip_stops():
+    logger.info("Refreshing data in the TripStops unlogged table...")
     
     toggle_carrier_fk(enable=False)
     with transaction.atomic():
-        query, params = TripStopsStaging._get_definition(**{'t.carrier_id':carrier.pk})
+        query, params = TripStopsStaging._get_definition()
         
         insertion_query = f"""
             INSERT INTO "trips_TripStops_Staging" (
@@ -134,7 +133,8 @@ def refresh_trip_stops(carrier_code):
         """
 
         with connection.cursor() as cursor:
+            TripStopsStaging.objects.all().delete()
             cursor.execute(insertion_query, params)
         
     toggle_carrier_fk(enable=True)
-    logger.info(f"Data for {carrier_code} carrier in TripStops table was successfully updated!")
+    logger.info(f"The data in the TripStops table successfully updated!")

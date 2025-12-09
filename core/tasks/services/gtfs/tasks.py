@@ -173,4 +173,4 @@ def download_and_process_gtfs(feed, carrier: str):
         del gtfs_buffer
         gc.collect()
 
-    refresh_trip_stops(carrier)
+    refresh_trip_stops()
